@@ -221,16 +221,22 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Multiple unnecessary optional chains (autofix applied iteratively)
+      // Invalid: Multiple unnecessary optional chains (autofix applied iteratively in multiple passes)
       {
         code: `
           const obj: { nested: { value: string } } = { nested: { value: 'test' } };
           const result = obj?.nested?.value;
         `,
-        output: `
+        output: [
+          `
           const obj: { nested: { value: string } } = { nested: { value: 'test' } };
           const result = obj.nested?.value;
         `,
+          `
+          const obj: { nested: { value: string } } = { nested: { value: 'test' } };
+          const result = obj.nested.value;
+        `,
+        ],
         filename: 'invalid6.ts',
         errors: [
           {
@@ -302,16 +308,26 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Nested optional chaining - all unnecessary (autofix applied iteratively)
+      // Invalid: Nested optional chaining - all unnecessary (autofix applied iteratively in multiple passes)
       {
         code: `
           const obj: { a: { b: { c: string } } } = { a: { b: { c: 'value' } } };
           const result = obj?.a?.b?.c;
         `,
-        output: `
+        output: [
+          `
           const obj: { a: { b: { c: string } } } = { a: { b: { c: 'value' } } };
           const result = obj.a?.b?.c;
         `,
+          `
+          const obj: { a: { b: { c: string } } } = { a: { b: { c: 'value' } } };
+          const result = obj.a.b?.c;
+        `,
+          `
+          const obj: { a: { b: { c: string } } } = { a: { b: { c: 'value' } } };
+          const result = obj.a.b.c;
+        `,
+        ],
         filename: 'invalid11.ts',
         errors: [
           {
@@ -319,16 +335,26 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Deeply nested optional chaining (autofix applied iteratively)
+      // Invalid: Deeply nested optional chaining (autofix applied iteratively in multiple passes)
       {
         code: `
           const obj: { x: { y: { z: number } } } = { x: { y: { z: 42 } } };
           const value = obj?.x?.y?.z;
         `,
-        output: `
+        output: [
+          `
           const obj: { x: { y: { z: number } } } = { x: { y: { z: 42 } } };
           const value = obj.x?.y?.z;
         `,
+          `
+          const obj: { x: { y: { z: number } } } = { x: { y: { z: 42 } } };
+          const value = obj.x.y?.z;
+        `,
+          `
+          const obj: { x: { y: { z: number } } } = { x: { y: { z: 42 } } };
+          const value = obj.x.y.z;
+        `,
+        ],
         filename: 'invalid12.ts',
         errors: [
           {
@@ -336,7 +362,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Chained with function call (autofix applied iteratively)
+      // Invalid: Chained with function call (autofix applied iteratively in multiple passes)
       {
         code: `
           function getObj(): { prop: { nested: string } } {
@@ -344,12 +370,20 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           }
           const value = getObj()?.prop?.nested;
         `,
-        output: `
+        output: [
+          `
           function getObj(): { prop: { nested: string } } {
             return { prop: { nested: 'test' } };
           }
           const value = getObj().prop?.nested;
         `,
+          `
+          function getObj(): { prop: { nested: string } } {
+            return { prop: { nested: 'test' } };
+          }
+          const value = getObj().prop.nested;
+        `,
+        ],
         filename: 'invalid13.ts',
         errors: [
           {
@@ -443,7 +477,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Complex chained expression (autofix applied iteratively)
+      // Invalid: Complex chained expression (autofix applied iteratively in multiple passes)
       {
         code: `
           interface Config {
@@ -456,7 +490,8 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const config: Config = { settings: { options: { value: 100 } } };
           const val = config?.settings?.options?.value;
         `,
-        output: `
+        output: [
+          `
           interface Config {
             settings: {
               options: {
@@ -467,6 +502,29 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const config: Config = { settings: { options: { value: 100 } } };
           const val = config.settings?.options?.value;
         `,
+          `
+          interface Config {
+            settings: {
+              options: {
+                value: number;
+              };
+            };
+          }
+          const config: Config = { settings: { options: { value: 100 } } };
+          const val = config.settings.options?.value;
+        `,
+          `
+          interface Config {
+            settings: {
+              options: {
+                value: number;
+              };
+            };
+          }
+          const config: Config = { settings: { options: { value: 100 } } };
+          const val = config.settings.options.value;
+        `,
+        ],
         filename: 'invalid19.ts',
         errors: [
           {

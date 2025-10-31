@@ -131,7 +131,21 @@ const result = unknownValue ?? 'fallback';
 
 ## Note on Auto-Fix
 
-Auto-fix is not currently implemented. The rule will only report unnecessary optional chaining and nullish coalescing operations. Auto-fix functionality may be added in a future release.
+Auto-fix is fully supported. The rule will automatically remove unnecessary optional chaining and nullish coalescing operations. For nested chains where multiple operators are unnecessary, the fixer will apply corrections iteratively across multiple passes until all unnecessary operators are removed.
+
+### Example Auto-Fix Behavior
+
+```typescript
+// Before
+const obj: { nested: { value: string } } = getData();
+const result = obj?.nested?.value;
+
+// After first pass
+const result = obj.nested?.value;
+
+// After second pass (fully fixed)
+const result = obj.nested.value;
+```
 
 ## License
 
