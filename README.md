@@ -131,7 +131,28 @@ const result = unknownValue ?? 'fallback';
 
 ## Note on Auto-Fix
 
-Auto-fix is not currently implemented. The rule will only report unnecessary optional chaining and nullish coalescing operations. Auto-fix functionality may be added in a future release.
+This rule supports ESLint's `--fix` option to automatically remove unnecessary optional chaining (`?.`) and nullish coalescing (`??`) operators.
+
+When you run ESLint with the `--fix` flag, the rule will:
+- Remove unnecessary `?.` and replace it with `.` for member access
+- Remove unnecessary `?.(` and replace it with `(` for function calls  
+- Replace unnecessary `value ?? fallback` with just `value`
+
+Example of auto-fix behavior:
+
+```typescript
+// Before fix
+const obj: { prop: string } = { prop: 'test' };
+const value = obj?.prop;
+const str: string = 'hello';
+const result = str ?? 'fallback';
+
+// After running eslint --fix
+const obj: { prop: string } = { prop: 'test' };
+const value = obj.prop;
+const str: string = 'hello';
+const result = str;
+```
 
 ## License
 

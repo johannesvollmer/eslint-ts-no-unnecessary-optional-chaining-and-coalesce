@@ -9,6 +9,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
   name: 'no-unnecessary-optional-chaining-and-coalesce',
   meta: {
     type: 'suggestion',
+    fixable: 'code',
     docs: {
       description: 'Disallow unnecessary optional chaining and nullish coalescing when TypeScript knows the value is never nullish',
     },
@@ -60,6 +61,13 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
             context.report({
               node: node,
               messageId: 'unnecessaryOptionalChain',
+              fix(fixer) {
+                const sourceCode = context.sourceCode || context.getSourceCode();
+                const text = sourceCode.getText(node);
+                // Replace ?. with . for member access
+                const fixed = text.replace(/\?\./g, '.');
+                return fixer.replaceText(node, fixed);
+              },
             });
           }
         } else if (node.expression.type === 'CallExpression' && node.expression.optional) {
@@ -70,6 +78,13 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
             context.report({
               node: node,
               messageId: 'unnecessaryOptionalChain',
+              fix(fixer) {
+                const sourceCode = context.sourceCode || context.getSourceCode();
+                const text = sourceCode.getText(node);
+                // Replace ?.( with ( for optional call
+                const fixed = text.replace(/\?\.\(/g, '(');
+                return fixer.replaceText(node, fixed);
+              },
             });
           }
         }
@@ -84,6 +99,11 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
             context.report({
               node: node,
               messageId: 'unnecessaryNullishCoalesce',
+              fix(fixer) {
+                const sourceCode = context.sourceCode || context.getSourceCode();
+                const leftText = sourceCode.getText(left);
+                return fixer.replaceText(node, leftText);
+              },
             });
           }
         }
