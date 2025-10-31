@@ -154,6 +154,12 @@ const str: string = 'hello';
 const result = str;
 ```
 
+### Current Limitations
+
+**Mixed nullable/non-nullable chains**: When a chain expression contains both necessary and unnecessary optional chaining (e.g., `nullableObject?.nonNullProp?.nullableProp` where `nullableObject` is nullable but `nonNullProp` is not), the rule currently reports and fixes the entire chain if the first object is non-nullable. This means it may not handle all mixed cases correctly. Future versions may address this by implementing per-link checking in the chain.
+
+**Chained nullish coalescing**: For chained nullish coalescing like `nullable1 ?? nonNullValue ?? nullable2`, the rule correctly identifies unnecessary operators but fixes the entire expression by keeping only the leftmost value. This works correctly when the leftmost value is non-nullable but may over-fix in mixed cases.
+
 ## License
 
 ISC

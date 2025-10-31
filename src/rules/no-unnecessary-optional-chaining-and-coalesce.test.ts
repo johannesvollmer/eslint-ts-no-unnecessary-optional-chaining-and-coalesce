@@ -1,5 +1,4 @@
 import rule from '../rules/no-unnecessary-optional-chaining-and-coalesce';
-import { ESLintUtils } from '@typescript-eslint/utils';
 
 describe('no-unnecessary-optional-chaining-and-coalesce', () => {
   it('should export a valid ESLint rule', () => {
