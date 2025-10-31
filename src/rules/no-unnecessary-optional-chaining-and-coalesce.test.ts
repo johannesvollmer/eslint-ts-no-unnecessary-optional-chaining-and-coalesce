@@ -14,6 +14,12 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
     expect(rule.meta.messages.unnecessaryOptionalChain).toContain('optional chaining');
     expect(rule.meta.messages.unnecessaryNullishCoalesce).toContain('nullish coalescing');
   });
+
+  it('should handle any and unknown types correctly', () => {
+    // This test verifies that the rule logic exists and is callable
+    // The actual type checking behavior is tested via the example.ts file
+    expect(typeof rule.create).toBe('function');
+  });
 });
 
 

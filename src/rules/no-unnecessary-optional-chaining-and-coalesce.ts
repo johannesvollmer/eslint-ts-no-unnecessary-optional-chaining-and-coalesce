@@ -24,6 +24,11 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     const checker = services.program.getTypeChecker();
 
     function isNullish(type: ts.Type): boolean {
+      // any and unknown types can contain null/undefined, so treat them as potentially nullish
+      if (type.flags & ts.TypeFlags.Any || type.flags & ts.TypeFlags.Unknown) {
+        return true;
+      }
+
       // Check if type includes null or undefined
       if (type.flags & ts.TypeFlags.Null || type.flags & ts.TypeFlags.Undefined) {
         return true;
