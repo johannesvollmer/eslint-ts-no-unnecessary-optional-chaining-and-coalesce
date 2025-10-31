@@ -3,4 +3,13 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.ts'],
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: {
+        moduleResolution: 'node16',
+        esModuleInterop: true,
+        skipLibCheck: true,
+      },
+    }],
+  },
 };
