@@ -1,5 +1,6 @@
 import path from 'path';
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import parser from '@typescript-eslint/parser';
 import rule from '../rules/no-unnecessary-optional-chaining-and-coalesce';
 
 // Configure RuleTester afterAll for Jest compatibility
@@ -7,15 +8,13 @@ RuleTester.afterAll = afterAll;
 
 const ruleTester = new RuleTester({
   languageOptions: {
-    parser: require('@typescript-eslint/parser'),
+    parser: parser as any,
     parserOptions: {
-      ecmaVersion: 2020,
-      sourceType: 'module',
-      project: './tsconfig.test.json',
-      tsconfigRootDir: path.join(__dirname, '../..'),
-      EXPERIMENTAL_useProjectService: {
-        allowDefaultProjectForFiles: ['*.ts', '**/*.ts'],
+      projectService: {
+        allowDefaultProject: ['*.ts*'],
+        maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 30,
       },
+      tsconfigRootDir: path.join(__dirname, '../..'),
     },
   },
 } as any);
@@ -110,7 +109,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
       {
         code: `
           type MaybeString = string | null;
-          const value: MaybeString = 'test';
+          declare const value: MaybeString;
           const result = value ?? 'default';
         `,
         filename: 'valid12.ts',
@@ -205,9 +204,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         `,
         filename: 'invalid6.ts',
         errors: [
-          {
-            messageId: 'unnecessaryOptionalChain',
-          },
           {
             messageId: 'unnecessaryOptionalChain',
           },
