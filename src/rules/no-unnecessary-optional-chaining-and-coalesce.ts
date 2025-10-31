@@ -63,8 +63,11 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
               messageId: 'unnecessaryOptionalChain',
               fix(fixer) {
                 const sourceCode = context.sourceCode || context.getSourceCode();
+                // Get the text and reconstruct without optional chaining
+                // Safe to use regex here because we're operating only on the ChainExpression node's
+                // source range, which cannot contain string literals or comments
                 const text = sourceCode.getText(node);
-                // Replace ?. with . for member access
+                // Replace all ?. with . in the chain expression
                 const fixed = text.replace(/\?\./g, '.');
                 return fixer.replaceText(node, fixed);
               },
@@ -80,8 +83,10 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
               messageId: 'unnecessaryOptionalChain',
               fix(fixer) {
                 const sourceCode = context.sourceCode || context.getSourceCode();
+                // Get the text and replace ?.( with (
+                // Safe to use regex here because we're operating only on the ChainExpression node's
+                // source range, which cannot contain string literals or comments
                 const text = sourceCode.getText(node);
-                // Replace ?.( with ( for optional call
                 const fixed = text.replace(/\?\.\(/g, '(');
                 return fixer.replaceText(node, fixed);
               },
