@@ -3,7 +3,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import rule from '../rules/no-unnecessary-optional-chaining-and-coalesce';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - TypeScript module resolution issue
+// @ts-ignore - TypeScript module resolution issue  
 import * as parser from '@typescript-eslint/parser';
 
 // Configure RuleTester afterAll for Jest compatibility
@@ -13,10 +13,7 @@ const ruleTester = new RuleTester({
   languageOptions: {
     parser,
     parserOptions: {
-      EXPERIMENTAL_useProjectService: {
-        allowDefaultProjectForFiles: ['./**/*.ts'],
-        defaultProject: './tsconfig.json',
-      },
+      EXPERIMENTAL_useProjectService: true,
     },
   },
 } as any);
