@@ -16,7 +16,7 @@
     "optional-chaining",
     "nullish-coalescing"
   ],
-  "author": "",
+  "author": "johannesvollmer",
   "license": "ISC",
   "devDependencies": {
     "@types/eslint": "^9.6.1",
