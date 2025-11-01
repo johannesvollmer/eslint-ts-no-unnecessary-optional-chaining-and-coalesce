@@ -17,6 +17,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
       unnecessaryNullishCoalesce: 'Unnecessary nullish coalescing (??) - TypeScript infers this value is never nullish.',
     },
     schema: [],
+    fixable: 'code',
   },
   defaultOptions: [],
   create(context) {
@@ -43,7 +44,13 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     }
 
     function isNeverNullish(node: TSESTree.Node): boolean {
-      const tsNode = services.esTreeNodeToTSNodeMap.get(node);
+      // Unwrap ChainExpression to get the actual expression
+      let actualNode = node;
+      if (node.type === 'ChainExpression') {
+        actualNode = node.expression;
+      }
+      
+      const tsNode = services.esTreeNodeToTSNodeMap.get(actualNode);
       const type = checker.getTypeAtLocation(tsNode);
       
       return !isNullish(type);
@@ -60,6 +67,26 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
             context.report({
               node: node,
               messageId: 'unnecessaryOptionalChain',
+              fix(fixer) {
+                const sourceCode = context.sourceCode;
+                const memberExpr = node.expression as TSESTree.MemberExpression;
+                
+                // Get the full text of the chain expression
+                const chainText = sourceCode.getText(node);
+                
+                // For computed properties (arr?.[0]), replace ?.[ with [
+                // For regular properties (obj?.prop), replace ?. with .
+                let fixedText: string;
+                if (memberExpr.computed) {
+                  // Computed property: arr?.[0] -> arr[0]
+                  fixedText = chainText.replace('?.[', '[');
+                } else {
+                  // Regular property: obj?.prop -> obj.prop
+                  fixedText = chainText.replace('?.', '.');
+                }
+                
+                return fixer.replaceText(node, fixedText);
+              },
             });
           }
         } else if (node.expression.type === 'CallExpression' && node.expression.optional) {
@@ -70,6 +97,18 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
             context.report({
               node: node,
               messageId: 'unnecessaryOptionalChain',
+              fix(fixer) {
+                const sourceCode = context.sourceCode;
+                
+                // Get the full text of the chain expression
+                const chainText = sourceCode.getText(node);
+                
+                // Replace the first occurrence of ?. with empty string (for calls like fn?.())
+                // This handles fn?.() -> fn()
+                const fixedText = chainText.replace('?.', '');
+                
+                return fixer.replaceText(node, fixedText);
+              },
             });
           }
         }
@@ -84,6 +123,12 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
             context.report({
               node: node,
               messageId: 'unnecessaryNullishCoalesce',
+              fix(fixer) {
+                const sourceCode = context.sourceCode;
+                const leftText = sourceCode.getText(left);
+                
+                return fixer.replaceText(node, leftText);
+              },
             });
           }
         }
