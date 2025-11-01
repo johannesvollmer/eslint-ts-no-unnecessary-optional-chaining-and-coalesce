@@ -12,12 +12,46 @@
   "keywords": [
     "eslint",
     "eslint-plugin",
+    "eslintplugin",
     "typescript",
     "optional-chaining",
-    "nullish-coalescing"
+    "nullish-coalescing",
+    "type-safety",
+    "linter",
+    "lint",
+    "code-quality",
+    "static-analysis",
+    "ts",
+    "eslint-rule"
   ],
-  "author": "johannesvollmer",
+  "author": {
+    "name": "Johannes Vollmer",
+    "email": "32042925+johannesvollmer@users.noreply.github.com",
+    "url": "https://github.com/johannesvollmer"
+  },
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johannesvollmer/eslint-ts-no-unnecessary-optional-chaining-and-coalesce.git"
+  },
+  "bugs": {
+    "url": "https://github.com/johannesvollmer/eslint-ts-no-unnecessary-optional-chaining-and-coalesce/issues"
+  },
+  "homepage": "https://github.com/johannesvollmer/eslint-ts-no-unnecessary-optional-chaining-and-coalesce#readme",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "peerDependencies": {
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
   "devDependencies": {
     "@types/eslint": "^9.6.1",
     "@types/jest": "^30.0.0",
@@ -29,5 +63,9 @@
     "jest": "^30.2.0",
     "ts-jest": "^29.4.5",
     "typescript": "^5.9.3"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/johannesvollmer"
   }
 }
