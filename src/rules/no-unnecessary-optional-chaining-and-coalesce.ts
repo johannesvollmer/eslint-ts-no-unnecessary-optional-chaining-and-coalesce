@@ -17,8 +17,8 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
       description: 'Disallow unnecessary optional chaining and nullish coalescing when TypeScript knows the value is never nullish',
     },
     messages: {
-      unnecessaryOptionalChain: 'Unnecessary optional chaining - the value is of type `{{type}}` which is never nullish.',
-      unnecessaryNullishCoalesce: 'Unnecessary nullish coalescing - the value is of type `{{type}}` which is never nullish.',
+      unnecessaryOptionalChain: 'Unnecessary `?.`: This value of type `{{type}}` will never be nullish.',
+      unnecessaryNullishCoalesce: 'Unnecessary `??`: This value of type `{{type}}` will never be nullish.',
     },
     schema: [],
     fixable: 'code',
