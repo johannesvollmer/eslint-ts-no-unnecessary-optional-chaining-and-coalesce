@@ -3,6 +3,10 @@ import * as ts from 'typescript';
 
 type MessageIds = 'unnecessaryOptionalChain' | 'unnecessaryNullishCoalesce';
 
+type MessageData = {
+  type: string;
+};
+
 export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
   (name) => `https://github.com/johannesvollmer/eslint-ts-no-unnecessary-optional-chaining-and-coalesce#${name}`
 )<[], MessageIds>({
@@ -13,8 +17,8 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
       description: 'Disallow unnecessary optional chaining and nullish coalescing when TypeScript knows the value is never nullish',
     },
     messages: {
-      unnecessaryOptionalChain: 'Unnecessary optional chaining (?.) - TypeScript infers this value is never nullish.',
-      unnecessaryNullishCoalesce: 'Unnecessary nullish coalescing (??) - TypeScript infers this value is never nullish.',
+      unnecessaryOptionalChain: 'Unnecessary optional chaining - the value is of type `{{type}}` which is never nullish.',
+      unnecessaryNullishCoalesce: 'Unnecessary nullish coalescing - the value is of type `{{type}}` which is never nullish.',
     },
     schema: [],
     fixable: 'code',
@@ -43,7 +47,11 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
       return false;
     }
 
-    function isNeverNullish(node: TSESTree.Node): boolean {
+    function getTypeString(type: ts.Type): string {
+      return checker.typeToString(type);
+    }
+
+    function checkIfNeverNullish(node: TSESTree.Node): { isNeverNullish: boolean; typeString: string } {
       // Unwrap ChainExpression to get the actual expression
       let actualNode = node;
       if (node.type === 'ChainExpression') {
@@ -53,7 +61,10 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
       const tsNode = services.esTreeNodeToTSNodeMap.get(actualNode);
       const type = checker.getTypeAtLocation(tsNode);
       
-      return !isNullish(type);
+      return {
+        isNeverNullish: !isNullish(type),
+        typeString: getTypeString(type)
+      };
     }
 
     return {
@@ -63,10 +74,14 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
           // Check the object being accessed
           const object = node.expression.object;
           
-          if (isNeverNullish(object)) {
+          const check = checkIfNeverNullish(object);
+          if (check.isNeverNullish) {
             context.report({
               node: node,
               messageId: 'unnecessaryOptionalChain',
+              data: {
+                type: check.typeString
+              },
               fix(fixer) {
                 const sourceCode = context.sourceCode;
                 const memberExpr = node.expression as TSESTree.MemberExpression;
@@ -93,10 +108,14 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
           // Handle optional call expression
           const callee = node.expression.callee;
           
-          if (isNeverNullish(callee)) {
+          const check = checkIfNeverNullish(callee);
+          if (check.isNeverNullish) {
             context.report({
               node: node,
               messageId: 'unnecessaryOptionalChain',
+              data: {
+                type: check.typeString
+              },
               fix(fixer) {
                 const sourceCode = context.sourceCode;
                 
@@ -119,10 +138,14 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
         if (node.operator === '??') {
           const left = node.left;
           
-          if (isNeverNullish(left)) {
+          const check = checkIfNeverNullish(left);
+          if (check.isNeverNullish) {
             context.report({
               node: node,
               messageId: 'unnecessaryNullishCoalesce',
+              data: {
+                type: check.typeString
+              },
               fix(fixer) {
                 const sourceCode = context.sourceCode;
                 const leftText = sourceCode.getText(left);
