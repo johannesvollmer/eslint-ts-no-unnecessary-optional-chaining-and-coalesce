@@ -2,13 +2,6 @@
 
 ESLint rule that flags `.?` and `??` usages where values will never be nullish according to TypeScript type inference.
 
-## Repository Structure
-
-This repository is organized as a monorepo containing two packages:
-
-- **[packages/eslint-plugin](packages/eslint-plugin)**: The main ESLint plugin package that provides the rule
-- **[packages/integration-tests](packages/integration-tests)**: Integration tests that verify the rule correctly integrates with ESLint
-
 ## Installation
 
 ```bash
@@ -153,34 +146,6 @@ const result = obj.nested?.value;
 // After second pass (fully fixed)
 const result = obj.nested.value;
 ```
-
-## Development
-
-This monorepo uses npm workspaces to manage multiple packages.
-
-### Building
-
-Build all packages:
-```bash
-npm run build
-```
-
-### Testing
-
-Run all tests:
-```bash
-npm test
-```
-
-Run tests for a specific package:
-```bash
-cd packages/eslint-plugin && npm test
-cd packages/integration-tests && npm test
-```
-
-### Integration Tests
-
-The `packages/integration-tests` package contains code with intentional unnecessary optional chaining and nullish coalescing. It runs the ESLint plugin against this code to verify the rule correctly detects all issues.
 
 ## License
 
