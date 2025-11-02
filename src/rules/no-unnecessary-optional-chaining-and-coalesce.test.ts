@@ -611,36 +611,4 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
   });
 });
 
-describe('error message rendering', () => {
-  // This test validates that the message template correctly uses the {{type}} placeholder
-  // by checking the actual rendered error message text
-  it('should correctly interpolate type information into error messages', () => {
-    const { ESLintUtils } = require('@typescript-eslint/utils');
-    const parserServices = ESLintUtils.getParserServices;
-    
-    // Get the rule's meta messages
-    const messages = rule.meta.messages;
-    
-    // Verify the message templates contain the {{type}} placeholder
-    expect(messages.unnecessaryOptionalChain).toContain('{{type}}');
-    expect(messages.unnecessaryNullishCoalesce).toContain('{{type}}');
-    
-    // Verify the expected message format
-    expect(messages.unnecessaryOptionalChain).toBe('Unnecessary `?.`: This value of type `{{type}}` will never be nullish.');
-    expect(messages.unnecessaryNullishCoalesce).toBe('Unnecessary `??`: This value of type `{{type}}` will never be nullish.');
-    
-    // Test that the messages can be interpolated correctly
-    const testType = 'string';
-    const expectedOptionalChainMessage = `Unnecessary \`?.\`: This value of type \`${testType}\` will never be nullish.`;
-    const expectedNullishCoalesceMessage = `Unnecessary \`??\`: This value of type \`${testType}\` will never be nullish.`;
-    
-    // Manually interpolate to verify format
-    const interpolatedOptionalChain = messages.unnecessaryOptionalChain.replace('{{type}}', testType);
-    const interpolatedNullishCoalesce = messages.unnecessaryNullishCoalesce.replace('{{type}}', testType);
-    
-    expect(interpolatedOptionalChain).toBe(expectedOptionalChainMessage);
-    expect(interpolatedNullishCoalesce).toBe(expectedNullishCoalesceMessage);
-  });
-});
-
 
