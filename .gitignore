@@ -4,7 +4,6 @@ dist
 .DS_Store
 coverage
 example.ts
-eslint.config.js
 tsconfig.example.json
 src/**/*.js
 src/**/*.d.ts
