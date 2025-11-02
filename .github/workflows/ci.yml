@@ -25,4 +25,5 @@ jobs:
       run: npm ci
     
     - name: Run tests
+      # This runs tests in all workspace packages (eslint-plugin and integration-tests)
       run: npm test
