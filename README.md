@@ -4,6 +4,7 @@ ESLint rule that flags `.?` and `??` usages where values will never be nullish a
 
 ## Installation
 
+Via [npm package](https://www.npmjs.com/package/eslint-ts-no-unnecessary-optional-chaining-and-coalesce).
 ```bash
 npm install --save-dev eslint-ts-no-unnecessary-optional-chaining-and-coalesce
 ```
