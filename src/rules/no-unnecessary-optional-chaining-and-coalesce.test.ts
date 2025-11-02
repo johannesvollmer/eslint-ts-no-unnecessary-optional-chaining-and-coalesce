@@ -534,5 +534,81 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
       },
     ],
   });
+
+  // Test that error messages include type information via string interpolation
+  ruleTester.run('error messages include type information', rule, {
+    valid: [],
+    invalid: [
+      {
+        code: `
+          const str: string = 'test';
+          const result = str?.length;
+        `,
+        output: `
+          const str: string = 'test';
+          const result = str.length;
+        `,
+        filename: 'message-test1.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+            data: { type: 'string' },
+          },
+        ],
+      },
+      {
+        code: `
+          const num: number = 42;
+          const result = num ?? 0;
+        `,
+        output: `
+          const num: number = 42;
+          const result = num;
+        `,
+        filename: 'message-test2.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+            data: { type: 'number' },
+          },
+        ],
+      },
+      {
+        code: `
+          const obj: { prop: string } = { prop: 'test' };
+          const value = obj?.prop;
+        `,
+        output: `
+          const obj: { prop: string } = { prop: 'test' };
+          const value = obj.prop;
+        `,
+        filename: 'message-test3.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+            data: { type: '{ prop: string; }' },
+          },
+        ],
+      },
+      {
+        code: `
+          const fn: () => number = () => 42;
+          const result = fn?.();
+        `,
+        output: `
+          const fn: () => number = () => 42;
+          const result = fn();
+        `,
+        filename: 'message-test4.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+            data: { type: '() => number' },
+          },
+        ],
+      },
+    ],
+  });
 });
+
 
