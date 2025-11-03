@@ -91,16 +91,11 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
       ChainExpression(node: TSESTree.ChainExpression) {
         const sourceCode = context.sourceCode;
         const nodeText = sourceCode.getText(node);
-        console.log(`\nVisiting ChainExpression: "${nodeText}"`);
-        console.log(`  Expression type: ${node.expression.type}`);
         if (node.expression.type === 'MemberExpression') {
-          console.log(`  MemberExpression.optional: ${node.expression.optional}`);
         } else if (node.expression.type === 'CallExpression') {
-          console.log(`  CallExpression.optional: ${node.expression.optional}`);
         }
         
         if (node.expression.type === 'MemberExpression' && node.expression.optional) {
-          console.log(`  Checking MemberExpression chain...`);
           
           // Walk through the chain of MemberExpressions to find the innermost unnecessary optional chaining
           // Start from the outermost and work inward
@@ -109,24 +104,20 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
           let innermostUnnecessaryTypeString: string | undefined;
           
           while (current) {
-            console.log(`    Checking member: "${sourceCode.getText(current)}" (optional=${current.optional})`);
             
             if (current.optional) {
               const objectToCheck = current.object;
-              console.log(`      Object: "${sourceCode.getText(objectToCheck)}" (type=${objectToCheck.type})`);
               
               // Skip if the object is itself an optional chain (we'll check it in the next iteration)
               if (objectToCheck.type !== 'MemberExpression' || !objectToCheck.optional) {
                 if (objectToCheck.type !== 'ChainExpression') {
                   const check = checkIfNeverNullish(objectToCheck);
-                  console.log(`      Check result: isNeverNullish=${check.isNeverNullish}, type="${check.typeString}"`);
                   
                   if (check.isNeverNullish) {
                     // This is an unnecessary optional chain
                     // Keep track of it, and continue checking inner chains
                     innermostUnnecessary = current;
                     innermostUnnecessaryTypeString = check.typeString;
-                    console.log(`      Found unnecessary optional chain!`);
                   }
                 }
               }
@@ -142,7 +133,6 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
           
           // Report the innermost unnecessary optional chain
           if (innermostUnnecessary && innermostUnnecessaryTypeString) {
-            console.log(`  Reporting innermost unnecessary: "${sourceCode.getText(innermostUnnecessary)}"`);
             
             context.report({
               node: innermostUnnecessary,
@@ -155,7 +145,6 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
                 
                 // Get the text of the member expression to fix
                 const memberText = sourceCode.getText(innermostUnnecessary!);
-                console.log(`  Fixing MemberExpression: "${memberText}"`);
                 
                 // For computed properties (arr?.[0]), replace ?.[ with [
                 // For regular properties (obj?.prop), replace ?. with .
@@ -163,11 +152,9 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
                 if (innermostUnnecessary!.computed) {
                   // Computed property: arr?.[0] -> arr[0]
                   fixedText = memberText.replace('?.[', '[');
-                  console.log(`  Fixed (computed): "${fixedText}"`);
                 } else {
                   // Regular property: obj?.prop -> obj.prop
                   fixedText = memberText.replace('?.', '.');
-                  console.log(`  Fixed (regular): "${fixedText}"`);
                 }
                 
                 return fixer.replaceText(innermostUnnecessary!, fixedText);
@@ -177,7 +164,6 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
         } else if (node.expression.type === 'CallExpression' && node.expression.optional) {
           // Handle optional call expression
           const calleeNode = node.expression.callee;
-          console.log(`  Callee type: ${calleeNode.type}, text: "${sourceCode.getText(calleeNode)}"`);
           
           // If the callee is a MemberExpression with optional, check its object first
           // For example, in x.selectedCategoryName?.toLowerCase?.(), the callee is
@@ -190,21 +176,17 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
             let innermostUnnecessaryTypeString: string | undefined;
             
             while (current) {
-              console.log(`    Checking member in callee: "${sourceCode.getText(current)}" (optional=${current.optional})`);
               
               if (current.optional) {
                 const objectToCheck = current.object;
-                console.log(`      Object: "${sourceCode.getText(objectToCheck)}" (type=${objectToCheck.type})`);
                 
                 if (objectToCheck.type !== 'MemberExpression' || !objectToCheck.optional) {
                   if (objectToCheck.type !== 'ChainExpression') {
                     const check = checkIfNeverNullish(objectToCheck);
-                    console.log(`      Check result: isNeverNullish=${check.isNeverNullish}, type="${check.typeString}"`);
                     
                     if (check.isNeverNullish) {
                       innermostUnnecessary = current;
                       innermostUnnecessaryTypeString = check.typeString;
-                      console.log(`      Found unnecessary optional member in callee!`);
                     }
                   }
                 }
@@ -219,7 +201,6 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
             
             if (innermostUnnecessary && innermostUnnecessaryTypeString) {
               // Report error on the innermost unnecessary member access in the callee
-              console.log(`  Reporting innermost unnecessary member in callee: "${sourceCode.getText(innermostUnnecessary)}"`);
               context.report({
                 node: innermostUnnecessary,
                 messageId: 'unnecessaryOptionalChain',
@@ -228,7 +209,6 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
                 } satisfies MessageData,
                 fix(fixer) {
                   const memberText = sourceCode.getText(innermostUnnecessary!);
-                  console.log(`  Fixing MemberExpression in callee: "${memberText}"`);
                   
                   let fixedText: string;
                   if (innermostUnnecessary!.computed) {
@@ -236,7 +216,6 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
                   } else {
                     fixedText = memberText.replace('?.', '.');
                   }
-                  console.log(`  Fixed: "${fixedText}"`);
                   
                   return fixer.replaceText(innermostUnnecessary!, fixedText);
                 },
@@ -247,10 +226,8 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
           
           // Check the callee of the optional call
           const check = checkIfNeverNullish(calleeNode);
-          console.log(`  Check result for callee: isNeverNullish=${check.isNeverNullish}, type="${check.typeString}"`);
           
           if (check.isNeverNullish) {
-            console.log(`  Reporting error for optional call`);
             context.report({
               node: node,
               messageId: 'unnecessaryOptionalChain',
@@ -267,7 +244,6 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
                 
                 // Build the fixed text: fn?.() -> fn()
                 const fixedText = `${calleeText}(${argsText})`;
-                console.log(`  Fixing optional call from "${sourceCode.getText(node)}" to "${fixedText}"`);
                 
                 return fixer.replaceText(node, fixedText);
               },
