@@ -154,6 +154,14 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         `,
         filename: 't.ts',
       },
+      {
+        code: `
+          function identity<T>(): T {
+            return T ?? '0';
+          }
+        `,
+        filename: 'generic.ts',
+      },
     ],
     invalid: [
       // Invalid: Optional chaining on non-nullable object
@@ -190,6 +198,57 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
+
+      // the array member is always present, so the chaining array access is unnecessary:
+      {
+        code: `
+          const poi: { categories: ({id?:string,sourceCategory?:string}|null)[] } = {} as any;
+          const categoryId = poi.categories?.[0]?.id ?? poi.categories?.[0]?.sourceCategory ?? '';
+        `,
+        output: `
+          const poi: { categories: ({id?:string,sourceCategory?:string}|null)[] } = {} as any;
+          const categoryId = poi.categories[0]?.id ?? poi.categories[0]?.sourceCategory ?? '';
+        `,
+        filename: 'invalid_deep_array1.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+
+      {
+        code: `
+          const x: { selectedCategoryName: string } = {} as any;
+          const s = x.selectedCategoryName?.toLowerCase?.() === 'favorites';
+        `,
+        output: `
+          const x: { selectedCategoryName: string } = {} as any;
+          const s = x.selectedCategoryName.toLowerCase() === 'favorites';
+        `,
+        filename: 'invalid_deep_method1.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+
+      {
+        code: `
+          const isDark = globalThis.matchMedia?.('dark')?.matches ?? false;
+        `,
+        output: `
+          const isDark = globalThis.matchMedia('dark')?.matches ?? false;
+        `,
+        filename: 'invalid_call2.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+
       // Invalid: Optional chaining on guaranteed object
       {
         code: `
