@@ -19,25 +19,33 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     messages: {
       unnecessaryOptionalChain: 'Unnecessary `?.`: This value of type `{{type}}` will never be nullish.',
       unnecessaryNullishCoalesce: 'Unnecessary `??`: This value of type `{{type}}` will never be nullish.',
-      requiresStrictNullChecks: 'Checking for unnecessary `.?` and `??` requires `strictNullChecks` to be enabled in tsconfig.',
+      requiresStrictNullChecks: 'Checking for unnecessary `.?` and `??` requires `strictNullChecks` to be enabled in tsconfig, and requires full type information (using the typescript parser for eslint).',
     },
     schema: [],
     fixable: 'code',
   },
   defaultOptions: [],
   create(context) {
-    const services = ESLintUtils.getParserServices(context);
-    const checker = services.program.getTypeChecker();
-        
-    const compilerOptions = services.program.getCompilerOptions();
-    const strictNullChecks = !!compilerOptions.strictNullChecks || !!compilerOptions.strict;
-    if (!strictNullChecks){
+    const services = ESLintUtils.getParserServices(context, true);
+    if (!services.program){
       context.report({
         loc: { line: 1, column: 0 },
         messageId: 'requiresStrictNullChecks',
       });
       return {};
     }
+        
+    const compilerOptions = services.program.getCompilerOptions();
+    const hasStrictNullChecks = (compilerOptions.strictNullChecks ?? false) || (compilerOptions.strict ?? false);
+    if (!hasStrictNullChecks){
+      context.report({
+        loc: { line: 1, column: 0 },
+        messageId: 'requiresStrictNullChecks',
+      });
+      return {};
+    }
+
+    const checker = services.program.getTypeChecker();
 
     function isNullish(type: ts.Type): boolean {
       // any and unknown types can contain null/undefined, so treat them as potentially nullish
