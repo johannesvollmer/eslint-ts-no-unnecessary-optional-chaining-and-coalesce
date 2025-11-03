@@ -247,11 +247,22 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         code: `
           const isDark = globalThis.matchMedia?.('dark')?.matches ?? false;
         `,
-        output: `
+        output: [
+          `
           const isDark = globalThis.matchMedia('dark')?.matches ?? false;
         `,
+          `
+          const isDark = globalThis.matchMedia('dark').matches ?? false;
+        `,
+          `
+          const isDark = globalThis.matchMedia('dark').matches;
+        `,
+        ],
         filename: 'invalid_call2.ts',
         errors: [
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+          },
           {
             messageId: 'unnecessaryOptionalChain',
           },
