@@ -89,6 +89,8 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     /**
      * Recursively finds the innermost unnecessary optional chaining in a MemberExpression chain.
      * Returns the innermost MemberExpression with unnecessary optional chaining and its type.
+     * "Innermost" means the deepest in the execution order (rightmost in the chain).
+     * When multiple levels are unnecessary, returns the innermost (rightmost) one first.
      */
     function findInnermostUnnecessaryOptionalChain(
       memberExpr: TSESTree.MemberExpression
@@ -100,26 +102,34 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
 
       const objectToCheck = memberExpr.object;
       
-      // Recursive case: if the object is also an optional MemberExpression, check it first
+      // If the object is a MemberExpression with optional, recurse to check deeper chains first
       if (objectToCheck.type === 'MemberExpression' && objectToCheck.optional) {
+        // First check if there's an unnecessary chain deeper in
         const innerResult = findInnermostUnnecessaryOptionalChain(objectToCheck);
         if (innerResult) {
+          // Found an inner unnecessary chain, return it (innermost first)
           return innerResult;
         }
-      }
-      
-      // Skip ChainExpressions as they will be handled by their own visitor
-      if (objectToCheck.type === 'ChainExpression') {
+        // No inner unnecessary chain found in the deeper levels
+        // Don't check the current level when object is optional - it will be checked in its own iteration
         return undefined;
-      }
-      
-      // Check if the current optional chaining is unnecessary
-      const check = checkIfNeverNullish(objectToCheck);
-      if (check.isNeverNullish) {
-        return {
-          node: memberExpr,
-          typeString: check.typeString
-        };
+      } else if (objectToCheck.type === 'ChainExpression') {
+        // Skip ChainExpressions as they will be handled by their own visitor
+        return undefined;
+      } else if (objectToCheck.type === 'CallExpression' && objectToCheck.optional) {
+        // If the object is an optional call (e.g., fn?.() in fn?.().prop),
+        // don't return undefined - let the caller handle it
+        // The call will be checked separately in the ChainExpression visitor
+        return undefined;
+      } else {
+        // Object is not an optional chain, check if it's non-nullish
+        const check = checkIfNeverNullish(objectToCheck);
+        if (check.isNeverNullish) {
+          return {
+            node: memberExpr,
+            typeString: check.typeString
+          };
+        }
       }
       
       return undefined;
@@ -162,6 +172,29 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
                 return fixer.replaceText(result.node, fixedText);
               },
             });
+            return; // Found and reported an error, don't check further
+          }
+          
+          // No unnecessary member chaining found, but check if the object is an optional call
+          const object = node.expression.object;
+          if (object.type === 'CallExpression' && object.optional) {
+            const calleeCheck = checkIfNeverNullish(object.callee);
+            if (calleeCheck.isNeverNullish) {
+              // The optional call is unnecessary
+              context.report({
+                node: object,
+                messageId: 'unnecessaryOptionalChain',
+                data: {
+                  type: calleeCheck.typeString
+                } satisfies MessageData,
+                fix(fixer) {
+                  const calleeText = sourceCode.getText(object.callee);
+                  const argsText = object.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
+                  const fixedText = `${calleeText}(${argsText})`;
+                  return fixer.replaceText(object, fixedText);
+                },
+              });
+            }
           }
         } else if (node.expression.type === 'CallExpression' && node.expression.optional) {
           // Handle optional call expression

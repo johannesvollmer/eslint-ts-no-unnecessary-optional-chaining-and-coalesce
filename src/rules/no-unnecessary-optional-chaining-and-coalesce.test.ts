@@ -214,6 +214,9 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           {
             messageId: 'unnecessaryOptionalChain',
           },
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
         ],
       },
 
@@ -222,10 +225,16 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const x: { selectedCategoryName: string } = {} as any;
           const s = x.selectedCategoryName?.toLowerCase?.() === 'favorites';
         `,
-        output: `
+        output: [
+          `
+          const x: { selectedCategoryName: string } = {} as any;
+          const s = x.selectedCategoryName.toLowerCase?.() === 'favorites';
+        `,
+          `
           const x: { selectedCategoryName: string } = {} as any;
           const s = x.selectedCategoryName.toLowerCase() === 'favorites';
         `,
+        ],
         filename: 'invalid_deep_method1.ts',
         errors: [
           {
@@ -480,16 +489,22 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Chained optional chaining with array access (fixes one at a time, innermost first)
+      // Invalid: Chained optional chaining with array access (fixes one at a time, outermost first like other chains)
       {
         code: `
           const arr: { items: string[] } = { items: ['a', 'b'] };
           const item = arr?.items?.[0];
         `,
-        output: `
+        output: [
+          `
           const arr: { items: string[] } = { items: ['a', 'b'] };
-          const item = arr?.items[0];
+          const item = arr.items?.[0];
         `,
+          `
+          const arr: { items: string[] } = { items: ['a', 'b'] };
+          const item = arr.items[0];
+        `,
+        ],
         filename: 'invalid14.ts',
         errors: [
           {
