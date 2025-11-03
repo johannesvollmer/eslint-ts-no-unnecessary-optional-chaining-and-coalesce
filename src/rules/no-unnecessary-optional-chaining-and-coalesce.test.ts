@@ -124,6 +124,36 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         `,
         filename: 'valid13.ts',
       },
+      {
+        code: `
+          export interface ActionBarItem {
+            isVisible?: boolean | (() => boolean)
+          }
+
+          function isActionVisible(action: ActionBarItem): boolean {
+            if (typeof action.isVisible === 'function') {
+              return action.isVisible();
+            }
+            return action.isVisible ?? false;
+          }
+        `,
+        filename: 'actionbar.ts',
+      },
+      {
+        code: `
+          const localization: null | { value: string|null } = null as any;
+          const result = localization?.value ?? "xyz"
+        `,
+        filename: 'localization.ts',
+      },
+      {
+        code: `
+          type T = { x?: string };
+          let obj: T;
+          const result = obj.x?.length;
+        `,
+        filename: 't.ts',
+      },
     ],
     invalid: [
       // Invalid: Optional chaining on non-nullable object

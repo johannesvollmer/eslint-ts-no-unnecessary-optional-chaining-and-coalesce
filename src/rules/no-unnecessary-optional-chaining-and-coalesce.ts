@@ -1,7 +1,7 @@
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
 import * as ts from 'typescript';
 
-type MessageIds = 'unnecessaryOptionalChain' | 'unnecessaryNullishCoalesce';
+type MessageIds = 'unnecessaryOptionalChain' | 'unnecessaryNullishCoalesce' | 'requiresStrictNullChecks';
 
 type MessageData = {
   type: string;
@@ -19,6 +19,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     messages: {
       unnecessaryOptionalChain: 'Unnecessary `?.`: This value of type `{{type}}` will never be nullish.',
       unnecessaryNullishCoalesce: 'Unnecessary `??`: This value of type `{{type}}` will never be nullish.',
+      requiresStrictNullChecks: 'Checking for unnecessary `.?` and `??` requires `strictNullChecks` to be enabled in tsconfig.',
     },
     schema: [],
     fixable: 'code',
@@ -27,6 +28,16 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
   create(context) {
     const services = ESLintUtils.getParserServices(context);
     const checker = services.program.getTypeChecker();
+        
+    const compilerOptions = services.program.getCompilerOptions();
+    const strictNullChecks = !!compilerOptions.strictNullChecks || !!compilerOptions.strict;
+    if (!strictNullChecks){
+      context.report({
+        loc: { line: 1, column: 0 },
+        messageId: 'requiresStrictNullChecks',
+      });
+      return {};
+    }
 
     function isNullish(type: ts.Type): boolean {
       // any and unknown types can contain null/undefined, so treat them as potentially nullish
@@ -81,7 +92,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
               messageId: 'unnecessaryOptionalChain',
               data: {
                 type: check.typeString
-              },
+              } satisfies MessageData,
               fix(fixer) {
                 const sourceCode = context.sourceCode;
                 const memberExpr = node.expression as TSESTree.MemberExpression;
@@ -115,7 +126,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
               messageId: 'unnecessaryOptionalChain',
               data: {
                 type: check.typeString
-              },
+              } satisfies MessageData,
               fix(fixer) {
                 const sourceCode = context.sourceCode;
                 
@@ -145,7 +156,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
               messageId: 'unnecessaryNullishCoalesce',
               data: {
                 type: check.typeString
-              },
+              } satisfies MessageData,
               fix(fixer) {
                 const sourceCode = context.sourceCode;
                 const leftText = sourceCode.getText(left);
