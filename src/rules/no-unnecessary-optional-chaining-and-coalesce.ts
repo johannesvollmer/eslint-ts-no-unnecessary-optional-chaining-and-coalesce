@@ -71,7 +71,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     }
 
     function checkIfNeverNullish(node: TSESTree.Node): { isNeverNullish: boolean; typeString: string } {
-      // Unwrap ChainExpression to get the actual expression
+      // ChainExpression nodes wrap the actual expression we need to type-check
       let actualNode = node;
       if (node.type === 'ChainExpression') {
         actualNode = node.expression;
@@ -88,41 +88,32 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
 
     /**
      * Recursively finds the innermost unnecessary optional chaining in a MemberExpression chain.
-     * Returns the innermost MemberExpression with unnecessary optional chaining and its type.
      * "Innermost" means the deepest in the execution order (rightmost in the chain).
      * When multiple levels are unnecessary, returns the innermost (rightmost) one first.
      */
     function findInnermostUnnecessaryOptionalChain(
       memberExpr: TSESTree.MemberExpression
     ): { node: TSESTree.MemberExpression; typeString: string } | undefined {
-      // Base case: if not optional, nothing to check
       if (!memberExpr.optional) {
         return undefined;
       }
 
       const objectToCheck = memberExpr.object;
       
-      // If the object is a MemberExpression with optional, recurse to check deeper chains first
       if (objectToCheck.type === 'MemberExpression' && objectToCheck.optional) {
-        // First check if there's an unnecessary chain deeper in
         const innerResult = findInnermostUnnecessaryOptionalChain(objectToCheck);
         if (innerResult) {
-          // Found an inner unnecessary chain, return it (innermost first)
           return innerResult;
         }
-        // No inner unnecessary chain found in the deeper levels
-        // Don't check the current level when object is optional - it will be checked in its own iteration
+        // Don't check current level when object is optional - it will be checked in its own iteration
         return undefined;
       } else if (objectToCheck.type === 'ChainExpression') {
-        // Skip ChainExpressions as they will be handled by their own visitor
+        // ChainExpressions are handled by their own visitor
         return undefined;
       } else if (objectToCheck.type === 'CallExpression' && objectToCheck.optional) {
-        // If the object is an optional call (e.g., fn?.() in fn?.().prop),
-        // don't return undefined - let the caller handle it
-        // The call will be checked separately in the ChainExpression visitor
+        // Optional calls are checked separately in the ChainExpression visitor
         return undefined;
       } else {
-        // Object is not an optional chain, check if it's non-nullish
         const check = checkIfNeverNullish(objectToCheck);
         if (check.isNeverNullish) {
           return {
@@ -136,15 +127,12 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     }
 
     return {
-      // Handle optional chaining: value?.property or call()?.property
       ChainExpression(node: TSESTree.ChainExpression) {
         const sourceCode = context.sourceCode;
         
         if (node.expression.type === 'MemberExpression' && node.expression.optional) {
-          // Find the innermost unnecessary optional chain
           const result = findInnermostUnnecessaryOptionalChain(node.expression as TSESTree.MemberExpression);
           
-          // Report the innermost unnecessary optional chain
           if (result) {
             context.report({
               node: result.node,
@@ -154,33 +142,26 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
               } satisfies MessageData,
               fix(fixer) {
                 const sourceCode = context.sourceCode;
-                
-                // Get the text of the member expression to fix
                 const memberText = sourceCode.getText(result.node);
                 
-                // For computed properties (arr?.[0]), replace ?.[ with [
-                // For regular properties (obj?.prop), replace ?. with .
                 let fixedText: string;
                 if (result.node.computed) {
-                  // Computed property: arr?.[0] -> arr[0]
                   fixedText = memberText.replace('?.[', '[');
                 } else {
-                  // Regular property: obj?.prop -> obj.prop
                   fixedText = memberText.replace('?.', '.');
                 }
                 
                 return fixer.replaceText(result.node, fixedText);
               },
             });
-            return; // Found and reported an error, don't check further
+            return;
           }
           
-          // No unnecessary member chaining found, but check if the object is an optional call
+          // Check if the object is an optional call that needs fixing
           const object = node.expression.object;
           if (object.type === 'CallExpression' && object.optional) {
             const calleeCheck = checkIfNeverNullish(object.callee);
             if (calleeCheck.isNeverNullish) {
-              // The optional call is unnecessary
               context.report({
                 node: object,
                 messageId: 'unnecessaryOptionalChain',
@@ -197,18 +178,13 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
             }
           }
         } else if (node.expression.type === 'CallExpression' && node.expression.optional) {
-          // Handle optional call expression
           const calleeNode = node.expression.callee;
           
-          // If the callee is a MemberExpression with optional, check its chain first
-          // For example, in x.selectedCategoryName?.toLowerCase?.(), the callee is
-          // x.selectedCategoryName?.toLowerCase (a MemberExpression with optional)
-          // We should check x.selectedCategoryName, not the whole callee
+          // For chained optional calls like x?.method?.(), check the member chain first
           if (calleeNode.type === 'MemberExpression' && calleeNode.optional) {
             const result = findInnermostUnnecessaryOptionalChain(calleeNode);
             
             if (result) {
-              // Report error on the innermost unnecessary member access in the callee
               context.report({
                 node: result.node,
                 messageId: 'unnecessaryOptionalChain',
@@ -228,11 +204,10 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
                   return fixer.replaceText(result.node, fixedText);
                 },
               });
-              return; // Don't check the call itself
+              return;
             }
           }
           
-          // Check the callee of the optional call
           const check = checkIfNeverNullish(calleeNode);
           
           if (check.isNeverNullish) {
@@ -245,12 +220,8 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
               fix(fixer) {
                 const sourceCode = context.sourceCode;
                 const callExpr = node.expression as TSESTree.CallExpression;
-                
-                // Get the text of the callee and arguments
                 const calleeText = sourceCode.getText(callExpr.callee);
                 const argsText = callExpr.arguments.map(arg => sourceCode.getText(arg)).join(', ');
-                
-                // Build the fixed text: fn?.() -> fn()
                 const fixedText = `${calleeText}(${argsText})`;
                 
                 return fixer.replaceText(node, fixedText);
@@ -260,7 +231,6 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
         }
       },
 
-      // Handle nullish coalescing: value ?? fallback or call() ?? fallback
       LogicalExpression(node: TSESTree.LogicalExpression) {
         if (node.operator === '??') {
           const left = node.left;
