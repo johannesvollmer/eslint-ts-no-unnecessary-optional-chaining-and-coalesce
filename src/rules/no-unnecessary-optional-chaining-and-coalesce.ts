@@ -1,4 +1,4 @@
-import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
+import { ESLintUtils, TSESLint, TSESTree } from '@typescript-eslint/utils';
 import * as ts from 'typescript';
 
 type MessageIds = 'unnecessaryOptionalChain' | 'unnecessaryNullishCoalesce' | 'requiresStrictNullChecks';
@@ -134,8 +134,8 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     /**
      * Unified fix generator for optional chaining
      */
-    function createOptionalChainFix(node: TSESTree.Node, sourceCode: any) {
-      return (fixer: any) => {
+    function createOptionalChainFix(node: TSESTree.Node, sourceCode: Readonly<TSESLint.SourceCode>) {
+      return (fixer: TSESLint.RuleFixer) => {
         const nodeText = sourceCode.getText(node);
         let fixedText: string;
         
