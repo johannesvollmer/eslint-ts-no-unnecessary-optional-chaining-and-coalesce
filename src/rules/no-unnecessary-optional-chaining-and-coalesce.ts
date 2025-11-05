@@ -47,6 +47,9 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
 
     const checker = services.program.getTypeChecker();
 
+    /**
+     * Check if a TypeScript type can be nullish (null or undefined)
+     */
     function isNullish(type: ts.Type): boolean {
       // any and unknown types can contain null/undefined, so treat them as potentially nullish
       if (type.flags & ts.TypeFlags.Any || type.flags & ts.TypeFlags.Unknown) {
@@ -66,11 +69,11 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
       return false;
     }
 
-    function getTypeString(type: ts.Type): string {
-      return checker.typeToString(type);
-    }
-
-    function checkIfNeverNullish(node: TSESTree.Node): { isNeverNullish: boolean; typeString: string } {
+    /**
+     * Unified method to check if a node requires nullish handling.
+     * Returns type information if the node is never nullish, otherwise returns undefined.
+     */
+    function checkUnnecessaryNullishHandling(node: TSESTree.Node): { typeString: string } | undefined {
       // ChainExpression nodes wrap the actual expression we need to type-check
       let actualNode = node;
       if (node.type === 'ChainExpression') {
@@ -80,16 +83,16 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
       const tsNode = services.esTreeNodeToTSNodeMap.get(actualNode);
       const type = checker.getTypeAtLocation(tsNode);
       
-      return {
-        isNeverNullish: !isNullish(type),
-        typeString: getTypeString(type)
-      };
+      if (!isNullish(type)) {
+        return { typeString: checker.typeToString(type) };
+      }
+      
+      return undefined;
     }
 
     /**
-     * Recursively finds the innermost unnecessary optional chaining in a MemberExpression chain.
-     * "Innermost" means the deepest in the execution order (rightmost in the chain).
-     * When multiple levels are unnecessary, returns the innermost (rightmost) one first.
+     * Recursively finds the innermost unnecessary optional chaining in a chain.
+     * Returns the innermost (rightmost) unnecessary optional access first.
      */
     function findInnermostUnnecessaryOptionalChain(
       memberExpr: TSESTree.MemberExpression
@@ -100,6 +103,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
 
       const objectToCheck = memberExpr.object;
       
+      // Recursively check nested optional member expressions
       if (objectToCheck.type === 'MemberExpression' && objectToCheck.optional) {
         const innerResult = findInnermostUnnecessaryOptionalChain(objectToCheck);
         if (innerResult) {
@@ -107,146 +111,122 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
         }
         // Don't check current level when object is optional - it will be checked in its own iteration
         return undefined;
-      } else if (objectToCheck.type === 'ChainExpression') {
-        // ChainExpressions are handled by their own visitor
+      }
+      
+      // Skip ChainExpressions and optional calls - they're handled by their own visitors
+      if (objectToCheck.type === 'ChainExpression' || 
+          (objectToCheck.type === 'CallExpression' && objectToCheck.optional)) {
         return undefined;
-      } else if (objectToCheck.type === 'CallExpression' && objectToCheck.optional) {
-        // Optional calls are checked separately in the ChainExpression visitor
-        return undefined;
-      } else {
-        const check = checkIfNeverNullish(objectToCheck);
-        if (check.isNeverNullish) {
-          return {
-            node: memberExpr,
-            typeString: check.typeString
-          };
-        }
+      }
+      
+      // Check if the object requires nullish handling
+      const check = checkUnnecessaryNullishHandling(objectToCheck);
+      if (check) {
+        return {
+          node: memberExpr,
+          typeString: check.typeString
+        };
       }
       
       return undefined;
     }
 
+    /**
+     * Unified fix generator for optional chaining
+     */
+    function createOptionalChainFix(node: TSESTree.Node, sourceCode: any) {
+      return (fixer: any) => {
+        const nodeText = sourceCode.getText(node);
+        let fixedText: string;
+        
+        if (node.type === 'MemberExpression' && node.computed) {
+          fixedText = nodeText.replace('?.[', '[');
+        } else if (node.type === 'MemberExpression') {
+          fixedText = nodeText.replace('?.', '.');
+        } else if (node.type === 'ChainExpression' && node.expression.type === 'CallExpression') {
+          const callExpr = node.expression as TSESTree.CallExpression;
+          const calleeText = sourceCode.getText(callExpr.callee);
+          const argsText = callExpr.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
+          fixedText = `${calleeText}(${argsText})`;
+        } else if (node.type === 'CallExpression' && node.optional) {
+          const calleeText = sourceCode.getText(node.callee);
+          const argsText = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
+          fixedText = `${calleeText}(${argsText})`;
+        } else {
+          return null;
+        }
+        
+        return fixer.replaceText(node, fixedText);
+      };
+    }
+
+    /**
+     * Unified method to report unnecessary optional chaining
+     */
+    function reportUnnecessaryOptionalChain(node: TSESTree.Node, typeString: string) {
+      context.report({
+        node,
+        messageId: 'unnecessaryOptionalChain',
+        data: { type: typeString } satisfies MessageData,
+        fix: createOptionalChainFix(node, context.sourceCode),
+      });
+    }
+
     return {
       ChainExpression(node: TSESTree.ChainExpression) {
-        const sourceCode = context.sourceCode;
+        const expression = node.expression;
         
-        if (node.expression.type === 'MemberExpression' && node.expression.optional) {
-          const result = findInnermostUnnecessaryOptionalChain(node.expression as TSESTree.MemberExpression);
+        // Handle optional member expressions (e.g., obj?.prop)
+        if (expression.type === 'MemberExpression' && expression.optional) {
+          const result = findInnermostUnnecessaryOptionalChain(expression);
           
           if (result) {
-            context.report({
-              node: result.node,
-              messageId: 'unnecessaryOptionalChain',
-              data: {
-                type: result.typeString
-              } satisfies MessageData,
-              fix(fixer) {
-                const sourceCode = context.sourceCode;
-                const memberText = sourceCode.getText(result.node);
-                
-                let fixedText: string;
-                if (result.node.computed) {
-                  fixedText = memberText.replace('?.[', '[');
-                } else {
-                  fixedText = memberText.replace('?.', '.');
-                }
-                
-                return fixer.replaceText(result.node, fixedText);
-              },
-            });
+            reportUnnecessaryOptionalChain(result.node, result.typeString);
             return;
           }
           
           // Check if the object is an optional call that needs fixing
-          const object = node.expression.object;
+          const object = expression.object;
           if (object.type === 'CallExpression' && object.optional) {
-            const calleeCheck = checkIfNeverNullish(object.callee);
-            if (calleeCheck.isNeverNullish) {
-              context.report({
-                node: object,
-                messageId: 'unnecessaryOptionalChain',
-                data: {
-                  type: calleeCheck.typeString
-                } satisfies MessageData,
-                fix(fixer) {
-                  const calleeText = sourceCode.getText(object.callee);
-                  const argsText = object.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
-                  const fixedText = `${calleeText}(${argsText})`;
-                  return fixer.replaceText(object, fixedText);
-                },
-              });
+            const check = checkUnnecessaryNullishHandling(object.callee);
+            if (check) {
+              reportUnnecessaryOptionalChain(object, check.typeString);
             }
           }
-        } else if (node.expression.type === 'CallExpression' && node.expression.optional) {
-          const calleeNode = node.expression.callee;
+        } 
+        // Handle optional call expressions (e.g., fn?.())
+        else if (expression.type === 'CallExpression' && expression.optional) {
+          const calleeNode = expression.callee;
           
           // For chained optional calls like x?.method?.(), check the member chain first
           if (calleeNode.type === 'MemberExpression' && calleeNode.optional) {
             const result = findInnermostUnnecessaryOptionalChain(calleeNode);
             
             if (result) {
-              context.report({
-                node: result.node,
-                messageId: 'unnecessaryOptionalChain',
-                data: {
-                  type: result.typeString
-                } satisfies MessageData,
-                fix(fixer) {
-                  const memberText = sourceCode.getText(result.node);
-                  
-                  let fixedText: string;
-                  if (result.node.computed) {
-                    fixedText = memberText.replace('?.[', '[');
-                  } else {
-                    fixedText = memberText.replace('?.', '.');
-                  }
-                  
-                  return fixer.replaceText(result.node, fixedText);
-                },
-              });
+              reportUnnecessaryOptionalChain(result.node, result.typeString);
               return;
             }
           }
           
-          const check = checkIfNeverNullish(calleeNode);
-          
-          if (check.isNeverNullish) {
-            context.report({
-              node: node,
-              messageId: 'unnecessaryOptionalChain',
-              data: {
-                type: check.typeString
-              } satisfies MessageData,
-              fix(fixer) {
-                const sourceCode = context.sourceCode;
-                const callExpr = node.expression as TSESTree.CallExpression;
-                const calleeText = sourceCode.getText(callExpr.callee);
-                const argsText = callExpr.arguments.map(arg => sourceCode.getText(arg)).join(', ');
-                const fixedText = `${calleeText}(${argsText})`;
-                
-                return fixer.replaceText(node, fixedText);
-              },
-            });
+          // Check if the callee requires nullish handling
+          const check = checkUnnecessaryNullishHandling(calleeNode);
+          if (check) {
+            reportUnnecessaryOptionalChain(node, check.typeString);
           }
         }
       },
 
       LogicalExpression(node: TSESTree.LogicalExpression) {
         if (node.operator === '??') {
-          const left = node.left;
+          const check = checkUnnecessaryNullishHandling(node.left);
           
-          const check = checkIfNeverNullish(left);
-          if (check.isNeverNullish) {
+          if (check) {
             context.report({
-              node: node,
+              node,
               messageId: 'unnecessaryNullishCoalesce',
-              data: {
-                type: check.typeString
-              } satisfies MessageData,
+              data: { type: check.typeString } satisfies MessageData,
               fix(fixer) {
-                const sourceCode = context.sourceCode;
-                const leftText = sourceCode.getText(left);
-                
+                const leftText = context.sourceCode.getText(node.left);
                 return fixer.replaceText(node, leftText);
               },
             });
