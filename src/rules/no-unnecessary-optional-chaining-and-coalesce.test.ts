@@ -154,6 +154,14 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         `,
         filename: 't.ts',
       },
+      {
+        code: `
+          function identity<T>(): T {
+            return T ?? '0';
+          }
+        `,
+        filename: 'generic.ts',
+      },
     ],
     invalid: [
       // Invalid: Optional chaining on non-nullable object
@@ -190,6 +198,77 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
+
+      // the array member is always present, so the chaining array access is unnecessary:
+      {
+        code: `
+          const poi: { categories: ({id?:string,sourceCategory?:string}|null)[] } = {} as any;
+          const categoryId = poi.categories?.[0]?.id ?? poi.categories?.[0]?.sourceCategory ?? '';
+        `,
+        output: `
+          const poi: { categories: ({id?:string,sourceCategory?:string}|null)[] } = {} as any;
+          const categoryId = poi.categories[0]?.id ?? poi.categories[0]?.sourceCategory ?? '';
+        `,
+        filename: 'invalid_deep_array1.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+
+      {
+        code: `
+          const x: { selectedCategoryName: string } = {} as any;
+          const s = x.selectedCategoryName?.toLowerCase?.() === 'favorites';
+        `,
+        output: [
+          `
+          const x: { selectedCategoryName: string } = {} as any;
+          const s = x.selectedCategoryName.toLowerCase?.() === 'favorites';
+        `,
+          `
+          const x: { selectedCategoryName: string } = {} as any;
+          const s = x.selectedCategoryName.toLowerCase() === 'favorites';
+        `,
+        ],
+        filename: 'invalid_deep_method1.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+
+      {
+        code: `
+          const isDark = globalThis.matchMedia?.('dark')?.matches ?? false;
+        `,
+        output: [
+          `
+          const isDark = globalThis.matchMedia('dark')?.matches ?? false;
+        `,
+          `
+          const isDark = globalThis.matchMedia('dark').matches ?? false;
+        `,
+          `
+          const isDark = globalThis.matchMedia('dark').matches;
+        `,
+        ],
+        filename: 'invalid_call2.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+          },
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+
       // Invalid: Optional chaining on guaranteed object
       {
         code: `
@@ -421,16 +500,22 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Chained optional chaining with array access (fixes one at a time, innermost first)
+      // Invalid: Chained optional chaining with array access (fixes one at a time, outermost first like other chains)
       {
         code: `
           const arr: { items: string[] } = { items: ['a', 'b'] };
           const item = arr?.items?.[0];
         `,
-        output: `
+        output: [
+          `
           const arr: { items: string[] } = { items: ['a', 'b'] };
-          const item = arr?.items[0];
+          const item = arr.items?.[0];
         `,
+          `
+          const arr: { items: string[] } = { items: ['a', 'b'] };
+          const item = arr.items[0];
+        `,
+        ],
         filename: 'invalid14.ts',
         errors: [
           {
