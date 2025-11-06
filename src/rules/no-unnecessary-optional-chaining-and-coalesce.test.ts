@@ -12,7 +12,7 @@ const ruleTester = new RuleTester({
     parserOptions: {
       projectService: {
         allowDefaultProject: ['*.ts*'],
-        maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 50,
+        maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 100,
       },
       tsconfigRootDir: path.join(__dirname, '../..'),
     },
@@ -719,6 +719,374 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           {
             messageId: 'unnecessaryOptionalChain',
             data: { type: '() => number' },
+          },
+        ],
+      },
+    ],
+  });
+
+  // Test exotic type scenarios
+  ruleTester.run('exotic type scenarios', rule, {
+    valid: [
+      // Valid: Intersection type with nullable component
+      {
+        code: `
+          type A = { a: string };
+          type B = { b: number };
+          type C = A & B;
+          const obj: C | null = null;
+          const value = obj?.a;
+        `,
+        filename: 'exotic-valid1.ts',
+      },
+      // Valid: Conditional type that can be nullish
+      {
+        code: `
+          type Maybe<T> = T extends string ? T | null : T;
+          const val: Maybe<string> = null;
+          const result = val ?? 'default';
+        `,
+        filename: 'exotic-valid2.ts',
+      },
+      // Valid: Deeply nested nullable type
+      {
+        code: `
+          type Deep = { l1: { l2: { l3: { l4: { l5: string } } } } } | null;
+          const obj: Deep = null;
+          const result = obj?.l1?.l2?.l3?.l4?.l5;
+        `,
+        filename: 'exotic-valid3.ts',
+      },
+      // Valid: Logical OR with nullable
+      {
+        code: `
+          const str: string | null = null;
+          const result = str?.length || 0;
+        `,
+        filename: 'exotic-valid4.ts',
+      },
+      // Valid: Logical AND with nullable
+      {
+        code: `
+          const obj: { prop: string } | null = null;
+          const result = obj && obj.prop;
+        `,
+        filename: 'exotic-valid5.ts',
+      },
+    ],
+    invalid: [
+      // Invalid: Intersection type - both components non-nullable
+      {
+        code: `
+          type A = { a: string };
+          type B = { b: number };
+          type C = A & B;
+          const obj: C = { a: 'test', b: 42 };
+          const value = obj?.a;
+        `,
+        output: `
+          type A = { a: string };
+          type B = { b: number };
+          type C = A & B;
+          const obj: C = { a: 'test', b: 42 };
+          const value = obj.a;
+        `,
+        filename: 'exotic-invalid1.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+      // Invalid: Conditional type that resolves to non-nullable
+      {
+        code: `
+          type NonNull<T> = T extends null ? never : T;
+          const val: NonNull<string> = 'test';
+          const result = val ?? 'default';
+        `,
+        output: `
+          type NonNull<T> = T extends null ? never : T;
+          const val: NonNull<string> = 'test';
+          const result = val;
+        `,
+        filename: 'exotic-invalid2.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+          },
+        ],
+      },
+      // Invalid: Very deep nesting - all non-nullable (autofix applied iteratively)
+      {
+        code: `
+          type Deep = { l1: { l2: { l3: { l4: { l5: { l6: string } } } } } };
+          const obj: Deep = { l1: { l2: { l3: { l4: { l5: { l6: 'deep' } } } } } };
+          const result = obj?.l1?.l2?.l3?.l4?.l5?.l6;
+        `,
+        output: [
+          `
+          type Deep = { l1: { l2: { l3: { l4: { l5: { l6: string } } } } } };
+          const obj: Deep = { l1: { l2: { l3: { l4: { l5: { l6: 'deep' } } } } } };
+          const result = obj.l1?.l2?.l3?.l4?.l5?.l6;
+        `,
+          `
+          type Deep = { l1: { l2: { l3: { l4: { l5: { l6: string } } } } } };
+          const obj: Deep = { l1: { l2: { l3: { l4: { l5: { l6: 'deep' } } } } } };
+          const result = obj.l1.l2?.l3?.l4?.l5?.l6;
+        `,
+          `
+          type Deep = { l1: { l2: { l3: { l4: { l5: { l6: string } } } } } };
+          const obj: Deep = { l1: { l2: { l3: { l4: { l5: { l6: 'deep' } } } } } };
+          const result = obj.l1.l2.l3?.l4?.l5?.l6;
+        `,
+          `
+          type Deep = { l1: { l2: { l3: { l4: { l5: { l6: string } } } } } };
+          const obj: Deep = { l1: { l2: { l3: { l4: { l5: { l6: 'deep' } } } } } };
+          const result = obj.l1.l2.l3.l4?.l5?.l6;
+        `,
+          `
+          type Deep = { l1: { l2: { l3: { l4: { l5: { l6: string } } } } } };
+          const obj: Deep = { l1: { l2: { l3: { l4: { l5: { l6: 'deep' } } } } } };
+          const result = obj.l1.l2.l3.l4.l5?.l6;
+        `,
+          `
+          type Deep = { l1: { l2: { l3: { l4: { l5: { l6: string } } } } } };
+          const obj: Deep = { l1: { l2: { l3: { l4: { l5: { l6: 'deep' } } } } } };
+          const result = obj.l1.l2.l3.l4.l5.l6;
+        `,
+        ],
+        filename: 'exotic-invalid3.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+      // Invalid: Deeply nested operators - mix of ?. and ??
+      {
+        code: `
+          const obj: { a: { b: { c: number } } } = { a: { b: { c: 5 } } };
+          const result = (obj?.a?.b?.c ?? 0) ?? 1;
+        `,
+        output: [
+          `
+          const obj: { a: { b: { c: number } } } = { a: { b: { c: 5 } } };
+          const result = obj?.a?.b?.c ?? 0;
+        `,
+          `
+          const obj: { a: { b: { c: number } } } = { a: { b: { c: 5 } } };
+          const result = obj.a?.b?.c ?? 0;
+        `,
+          `
+          const obj: { a: { b: { c: number } } } = { a: { b: { c: 5 } } };
+          const result = obj.a.b?.c ?? 0;
+        `,
+          `
+          const obj: { a: { b: { c: number } } } = { a: { b: { c: 5 } } };
+          const result = obj.a.b.c ?? 0;
+        `,
+          `
+          const obj: { a: { b: { c: number } } } = { a: { b: { c: 5 } } };
+          const result = obj.a.b.c;
+        `,
+        ],
+        filename: 'exotic-invalid4.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+          },
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+          },
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+      // Invalid: Logical OR with non-nullable (|| is not checked by this rule, but ?. is)
+      {
+        code: `
+          const str: string = 'hello';
+          const result = str?.length || 0;
+        `,
+        output: `
+          const str: string = 'hello';
+          const result = str.length || 0;
+        `,
+        filename: 'exotic-invalid5.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+      // Invalid: Logical AND with non-nullable
+      {
+        code: `
+          const obj: { prop: string } = { prop: 'test' };
+          const result = obj && obj?.prop;
+        `,
+        output: `
+          const obj: { prop: string } = { prop: 'test' };
+          const result = obj && obj.prop;
+        `,
+        filename: 'exotic-invalid6.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+      // Invalid: Plus operation with nullish coalescing
+      {
+        code: `
+          const a: number = 5;
+          const b: number = 10;
+          const result = (a ?? 0) + (b ?? 0);
+        `,
+        output: `
+          const a: number = 5;
+          const b: number = 10;
+          const result = (a) + (b);
+        `,
+        filename: 'exotic-invalid7.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+          },
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+          },
+        ],
+      },
+      // Invalid: Complex expression with string concatenation and multiple operators
+      {
+        code: `
+          const obj: { val: number } = { val: 42 };
+          const fallback: string = 'default';
+          const result = (obj?.val + ' - ') + (fallback ?? 'none');
+        `,
+        output: `
+          const obj: { val: number } = { val: 42 };
+          const fallback: string = 'default';
+          const result = (obj.val + ' - ') + (fallback);
+        `,
+        filename: 'exotic-invalid8.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+          },
+        ],
+      },
+      // Invalid: Intersection type with array access
+      {
+        code: `
+          type HasArray = { items: string[] };
+          type HasCount = { count: number };
+          type Both = HasArray & HasCount;
+          const obj: Both = { items: ['a', 'b'], count: 2 };
+          const first = obj?.items?.[0];
+        `,
+        output: [
+          `
+          type HasArray = { items: string[] };
+          type HasCount = { count: number };
+          type Both = HasArray & HasCount;
+          const obj: Both = { items: ['a', 'b'], count: 2 };
+          const first = obj.items?.[0];
+        `,
+          `
+          type HasArray = { items: string[] };
+          type HasCount = { count: number };
+          type Both = HasArray & HasCount;
+          const obj: Both = { items: ['a', 'b'], count: 2 };
+          const first = obj.items[0];
+        `,
+        ],
+        filename: 'exotic-invalid9.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+      // Invalid: Conditional type in chain
+      {
+        code: `
+          type ExtractValue<T> = T extends { value: infer V } ? V : never;
+          type MyType = { value: { nested: string } };
+          const obj: ExtractValue<MyType> = { nested: 'test' };
+          const result = obj?.nested;
+        `,
+        output: `
+          type ExtractValue<T> = T extends { value: infer V } ? V : never;
+          type MyType = { value: { nested: string } };
+          const obj: ExtractValue<MyType> = { nested: 'test' };
+          const result = obj.nested;
+        `,
+        filename: 'exotic-invalid10.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+        ],
+      },
+      // Invalid: Deep nesting with logical OR
+      {
+        code: `
+          const obj: { a: { b: number } } = { a: { b: 10 } };
+          const multiplier: number = 2;
+          const result = (obj?.a?.b * (multiplier ?? 1)) || 0;
+        `,
+        output: [
+          `
+          const obj: { a: { b: number } } = { a: { b: 10 } };
+          const multiplier: number = 2;
+          const result = (obj.a?.b * (multiplier)) || 0;
+        `,
+          `
+          const obj: { a: { b: number } } = { a: { b: 10 } };
+          const multiplier: number = 2;
+          const result = (obj.a.b * (multiplier)) || 0;
+        `,
+        ],
+        filename: 'exotic-invalid11.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
+          },
+          {
+            messageId: 'unnecessaryNullishCoalesce',
+          },
+        ],
+      },
+      // Invalid: Chain with function calls and arithmetic
+      {
+        code: `
+          function getNum(): number { return 5; }
+          const obj: { multiply: (n: number) => number } = { multiply: (n) => n * 2 };
+          const result = obj?.multiply?.(getNum()) + 10;
+        `,
+        output: [
+          `
+          function getNum(): number { return 5; }
+          const obj: { multiply: (n: number) => number } = { multiply: (n) => n * 2 };
+          const result = obj.multiply?.(getNum()) + 10;
+        `,
+          `
+          function getNum(): number { return 5; }
+          const obj: { multiply: (n: number) => number } = { multiply: (n) => n * 2 };
+          const result = obj.multiply(getNum()) + 10;
+        `,
+        ],
+        filename: 'exotic-invalid12.ts',
+        errors: [
+          {
+            messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
