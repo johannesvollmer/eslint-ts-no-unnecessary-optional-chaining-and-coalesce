@@ -1,6 +1,6 @@
 {
   "name": "eslint-ts-no-unnecessary-optional-chaining-and-coalesce",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "ESLint rule that flags `.?` and `??` usages where values will never be nullish",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
