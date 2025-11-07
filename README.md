@@ -11,7 +11,7 @@ npm install --save-dev eslint-ts-no-unnecessary-optional-chaining-and-coalesce
 
 ## Requirements
 
-- ESLint 8.x
+- ESLint 9.x
 - TypeScript 5.x
 - @typescript-eslint/parser 8.x
 
