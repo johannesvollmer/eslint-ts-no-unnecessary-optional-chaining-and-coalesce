@@ -1092,6 +1092,235 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
       },
     ],
   });
+
+  ruleTester.run('unnecessary null or undefined conversion in coalescing', rule, {
+    valid: [
+      {
+        filename: 'can-be-both-null-and-undefined-coalesce-undefined.ts',
+        code: `
+          const x: string | null | undefined = null;
+          const result = x ?? undefined;
+        `,
+      },
+      {
+        filename: 'can-be-both-null-and-undefined-coalesce-null.ts',
+        code: `
+          const x: string | null | undefined = undefined;
+          const result = x ?? null;
+        `,
+      },
+      {
+        filename: 'can-be-null-not-undefined-coalesce-undefined.ts',
+        code: `
+          const x: string | null = null;
+          const result = x ?? undefined;
+        `,
+      },
+      {
+        filename: 'can-be-undefined-not-null-coalesce-null.ts',
+        code: `
+          const x: string | undefined = undefined;
+          const result = x ?? null;
+        `,
+      },
+      {
+        filename: 'coalesce-with-non-nullish-fallback-null.ts',
+        code: `
+          const x: string | null = null;
+          const result = x ?? 'fallback';
+        `,
+      },
+      {
+        filename: 'coalesce-with-non-nullish-fallback-undefined.ts',
+        code: `
+          const x: string | undefined = undefined;
+          const result = x ?? 0;
+        `,
+      },
+    ],
+    invalid: [
+      {
+        filename: 'can-be-undefined-not-null-coalesce-undefined.ts',
+        code: `
+          const x: string | undefined = undefined;
+          const result = x ?? undefined;
+        `,
+        output: `
+          const x: string | undefined = undefined;
+          const result = x;
+        `,
+        errors: [
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+        ],
+      },
+      {
+        filename: 'can-be-null-not-undefined-coalesce-null.ts',
+        code: `
+          const x: string | null = null;
+          const result = x ?? null;
+        `,
+        output: `
+          const x: string | null = null;
+          const result = x;
+        `,
+        errors: [
+          {
+            messageId: 'unnecessaryUndefinedToNullConversion',
+          },
+        ],
+      },
+      {
+        filename: 'optional-property-can-only-be-undefined.ts',
+        code: `
+          interface Config {
+            value?: string;
+          }
+          const config: Config = {};
+          const result = config.value ?? undefined;
+        `,
+        output: `
+          interface Config {
+            value?: string;
+          }
+          const config: Config = {};
+          const result = config.value;
+        `,
+        errors: [
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+        ],
+      },
+      {
+        filename: 'function-returning-only-null.ts',
+        code: `
+          function getNullable(): string | null {
+            return null;
+          }
+          const result = getNullable() ?? null;
+        `,
+        output: `
+          function getNullable(): string | null {
+            return null;
+          }
+          const result = getNullable();
+        `,
+        errors: [
+          {
+            messageId: 'unnecessaryUndefinedToNullConversion',
+          },
+        ],
+      },
+      {
+        filename: 'nested-expression-with-undefined.ts',
+        code: `
+          type MaybeString = string | undefined;
+          const value: MaybeString = undefined;
+          const fallback: string = 'test';
+          const result = (value ?? undefined) ?? fallback;
+        `,
+        output: `
+          type MaybeString = string | undefined;
+          const value: MaybeString = undefined;
+          const fallback: string = 'test';
+          const result = (value) ?? fallback;
+        `,
+        errors: [
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+        ],
+      },
+      {
+        filename: 'complex-type-with-only-undefined.ts',
+        code: `
+          type T = { x?: number };
+          const obj: T = {};
+          const result = obj.x ?? undefined;
+        `,
+        output: `
+          type T = { x?: number };
+          const obj: T = {};
+          const result = obj.x;
+        `,
+        errors: [
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+        ],
+      },
+      {
+        filename: 'multiple-unnecessary-coalescing-with-undefined.ts',
+        code: `
+          const x: string | undefined = undefined;
+          const result = (x ?? undefined) ?? undefined;
+        `,
+        output: [
+          `
+          const x: string | undefined = undefined;
+          const result = x ?? undefined;
+        `,
+          `
+          const x: string | undefined = undefined;
+          const result = x;
+        `,
+        ],
+        errors: [
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+        ],
+      },
+      {
+        filename: 'multiple-unnecessary-coalescing-with-null.ts',
+        code: `
+          const x: string | null = null;
+          const result = (x ?? null) ?? null;
+        `,
+        output: [
+          `
+          const x: string | null = null;
+          const result = x ?? null;
+        `,
+          `
+          const x: string | null = null;
+          const result = x;
+        `,
+        ],
+        errors: [
+          {
+            messageId: 'unnecessaryUndefinedToNullConversion',
+          },
+          {
+            messageId: 'unnecessaryUndefinedToNullConversion',
+          },
+        ],
+      },
+      {
+        filename: 'parenthesized-expression.ts',
+        code: `
+          const x: string | undefined = undefined;
+          const y = 10;
+          const result = (x ?? undefined) + y;
+        `,
+        output: `
+          const x: string | undefined = undefined;
+          const y = 10;
+          const result = (x) + y;
+        `,
+        errors: [
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+        ],
+      },
+    ],
+  });
 });
 
 
