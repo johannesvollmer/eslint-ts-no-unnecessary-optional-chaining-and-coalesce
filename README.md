@@ -108,6 +108,63 @@ const nullableFn: (() => string) | null = getFn();
 const result = nullableFn?.();
 ```
 
+### Unnecessary `?? undefined`
+
+```typescript
+// ❌ Bad - value can only be undefined (not null), coalescing with undefined is redundant
+const value: string | undefined = getValue();
+const result = value ?? undefined;
+
+// ✅ Good
+const result = value;
+
+// ❌ Bad - optional property can only be undefined
+interface Config {
+  setting?: string;
+}
+const config: Config = {};
+const result = config.setting ?? undefined;
+
+// ✅ Good
+const result = config.setting;
+
+// ✅ Good - value can be both null and undefined
+const value: string | null | undefined = getValue();
+const result = value ?? undefined;
+
+// ✅ Good - value can only be null, coalescing with undefined converts it
+const value: string | null = getValue();
+const result = value ?? undefined;
+```
+
+### Unnecessary `?? null`
+
+```typescript
+// ❌ Bad - value can only be null (not undefined), coalescing with null is redundant
+const value: string | null = getValue();
+const result = value ?? null;
+
+// ✅ Good
+const result = value;
+
+// ❌ Bad - function returns only null
+function getNullable(): string | null {
+  return null;
+}
+const result = getNullable() ?? null;
+
+// ✅ Good
+const result = getNullable();
+
+// ✅ Good - value can be both null and undefined
+const value: string | null | undefined = getValue();
+const result = value ?? null;
+
+// ✅ Good - value can only be undefined, coalescing with null converts it
+const value: string | undefined = getValue();
+const result = value ?? null;
+```
+
 ### Handling `any` and `unknown` Types
 
 The rule correctly treats `any` and `unknown` types as potentially nullish, since they can contain null or undefined values:
