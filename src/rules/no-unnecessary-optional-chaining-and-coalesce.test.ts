@@ -1092,6 +1092,196 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
       },
     ],
   });
+
+  // Test useless null or undefined conversion in coalescing
+  ruleTester.run('useless null or undefined conversion in coalescing', rule, {
+    valid: [
+      // Valid: x can be both null and undefined, so ?? undefined is meaningful
+      {
+        code: `
+          const x: string | null | undefined = null;
+          const result = x ?? undefined;
+        `,
+        filename: 'useless-conversion-valid1.ts',
+      },
+      // Valid: x can be both null and undefined, so ?? null is meaningful
+      {
+        code: `
+          const x: string | null | undefined = undefined;
+          const result = x ?? null;
+        `,
+        filename: 'useless-conversion-valid2.ts',
+      },
+      // Valid: x can be null but not undefined, so ?? undefined is meaningful
+      {
+        code: `
+          const x: string | null = null;
+          const result = x ?? undefined;
+        `,
+        filename: 'useless-conversion-valid3.ts',
+      },
+      // Valid: x can be undefined but not null, so ?? null is meaningful
+      {
+        code: `
+          const x: string | undefined = undefined;
+          const result = x ?? null;
+        `,
+        filename: 'useless-conversion-valid4.ts',
+      },
+      // Valid: x is never nullish, so ?? undefined is meaningful (even though unnecessary coalesce will be caught separately)
+      {
+        code: `
+          const x: string = 'hello';
+          const result = x ?? undefined;
+        `,
+        filename: 'useless-conversion-valid5.ts',
+      },
+      // Valid: x is never nullish, so ?? null is meaningful (even though unnecessary coalesce will be caught separately)
+      {
+        code: `
+          const x: string = 'hello';
+          const result = x ?? null;
+        `,
+        filename: 'useless-conversion-valid6.ts',
+      },
+      // Valid: coalescing with non-null/undefined value
+      {
+        code: `
+          const x: string | null = null;
+          const result = x ?? 'fallback';
+        `,
+        filename: 'useless-conversion-valid7.ts',
+      },
+      // Valid: coalescing with non-null/undefined value
+      {
+        code: `
+          const x: string | undefined = undefined;
+          const result = x ?? 0;
+        `,
+        filename: 'useless-conversion-valid8.ts',
+      },
+    ],
+    invalid: [
+      // Invalid: x can be undefined but not null, coalescing with undefined is useless
+      {
+        code: `
+          const x: string | undefined = undefined;
+          const result = x ?? undefined;
+        `,
+        output: `
+          const x: string | undefined = undefined;
+          const result = x;
+        `,
+        filename: 'useless-conversion-invalid1.ts',
+        errors: [
+          {
+            messageId: 'uselessNullishConversion',
+          },
+        ],
+      },
+      // Invalid: x can be null but not undefined, coalescing with null is useless
+      {
+        code: `
+          const x: string | null = null;
+          const result = x ?? null;
+        `,
+        output: `
+          const x: string | null = null;
+          const result = x;
+        `,
+        filename: 'useless-conversion-invalid2.ts',
+        errors: [
+          {
+            messageId: 'uselessNullishConversion',
+          },
+        ],
+      },
+      // Invalid: Optional property can be undefined but not null
+      {
+        code: `
+          interface Config {
+            value?: string;
+          }
+          const config: Config = {};
+          const result = config.value ?? undefined;
+        `,
+        output: `
+          interface Config {
+            value?: string;
+          }
+          const config: Config = {};
+          const result = config.value;
+        `,
+        filename: 'useless-conversion-invalid3.ts',
+        errors: [
+          {
+            messageId: 'uselessNullishConversion',
+          },
+        ],
+      },
+      // Invalid: Function returning only null
+      {
+        code: `
+          function getNullable(): string | null {
+            return null;
+          }
+          const result = getNullable() ?? null;
+        `,
+        output: `
+          function getNullable(): string | null {
+            return null;
+          }
+          const result = getNullable();
+        `,
+        filename: 'useless-conversion-invalid4.ts',
+        errors: [
+          {
+            messageId: 'uselessNullishConversion',
+          },
+        ],
+      },
+      // Invalid: Nested expression with undefined
+      {
+        code: `
+          type MaybeString = string | undefined;
+          const value: MaybeString = undefined;
+          const fallback: string = 'test';
+          const result = (value ?? undefined) ?? fallback;
+        `,
+        output: `
+          type MaybeString = string | undefined;
+          const value: MaybeString = undefined;
+          const fallback: string = 'test';
+          const result = (value) ?? fallback;
+        `,
+        filename: 'useless-conversion-invalid5.ts',
+        errors: [
+          {
+            messageId: 'uselessNullishConversion',
+          },
+        ],
+      },
+      // Invalid: Complex type with only undefined
+      {
+        code: `
+          type T = { x?: number };
+          const obj: T = {};
+          const result = obj.x ?? undefined;
+        `,
+        output: `
+          type T = { x?: number };
+          const obj: T = {};
+          const result = obj.x;
+        `,
+        filename: 'useless-conversion-invalid6.ts',
+        errors: [
+          {
+            messageId: 'uselessNullishConversion',
+          },
+        ],
+      },
+    ],
+  });
 });
 
 
