@@ -1093,62 +1093,54 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
     ],
   });
 
-  // Test useless null or undefined conversion in coalescing
-  ruleTester.run('useless null or undefined conversion in coalescing', rule, {
+  ruleTester.run('unnecessary null or undefined conversion in coalescing', rule, {
     valid: [
-      // Valid: x can be both null and undefined, so ?? undefined is meaningful
       {
+        filename: 'can-be-both-null-and-undefined-coalesce-undefined.ts',
         code: `
           const x: string | null | undefined = null;
           const result = x ?? undefined;
         `,
-        filename: 'useless-conversion-valid1.ts',
       },
-      // Valid: x can be both null and undefined, so ?? null is meaningful
       {
+        filename: 'can-be-both-null-and-undefined-coalesce-null.ts',
         code: `
           const x: string | null | undefined = undefined;
           const result = x ?? null;
         `,
-        filename: 'useless-conversion-valid2.ts',
       },
-      // Valid: x can be null but not undefined, so ?? undefined is meaningful
       {
+        filename: 'can-be-null-not-undefined-coalesce-undefined.ts',
         code: `
           const x: string | null = null;
           const result = x ?? undefined;
         `,
-        filename: 'useless-conversion-valid3.ts',
       },
-      // Valid: x can be undefined but not null, so ?? null is meaningful
       {
+        filename: 'can-be-undefined-not-null-coalesce-null.ts',
         code: `
           const x: string | undefined = undefined;
           const result = x ?? null;
         `,
-        filename: 'useless-conversion-valid4.ts',
       },
-
-      // Valid: coalescing with non-null/undefined value
       {
+        filename: 'coalesce-with-non-nullish-fallback-null.ts',
         code: `
           const x: string | null = null;
           const result = x ?? 'fallback';
         `,
-        filename: 'useless-conversion-valid7.ts',
       },
-      // Valid: coalescing with non-null/undefined value
       {
+        filename: 'coalesce-with-non-nullish-fallback-undefined.ts',
         code: `
           const x: string | undefined = undefined;
           const result = x ?? 0;
         `,
-        filename: 'useless-conversion-valid8.ts',
       },
     ],
     invalid: [
-      // Invalid: x can be undefined but not null, coalescing with undefined is useless
       {
+        filename: 'can-be-undefined-not-null-coalesce-undefined.ts',
         code: `
           const x: string | undefined = undefined;
           const result = x ?? undefined;
@@ -1157,15 +1149,14 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const x: string | undefined = undefined;
           const result = x;
         `,
-        filename: 'useless-conversion-invalid1.ts',
         errors: [
           {
-            messageId: 'uselessNullishConversion',
+            messageId: 'unnecessaryNullToUndefinedConversion',
           },
         ],
       },
-      // Invalid: x can be null but not undefined, coalescing with null is useless
       {
+        filename: 'can-be-null-not-undefined-coalesce-null.ts',
         code: `
           const x: string | null = null;
           const result = x ?? null;
@@ -1174,15 +1165,14 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const x: string | null = null;
           const result = x;
         `,
-        filename: 'useless-conversion-invalid2.ts',
         errors: [
           {
-            messageId: 'uselessNullishConversion',
+            messageId: 'unnecessaryUndefinedToNullConversion',
           },
         ],
       },
-      // Invalid: Optional property can be undefined but not null
       {
+        filename: 'optional-property-can-only-be-undefined.ts',
         code: `
           interface Config {
             value?: string;
@@ -1197,15 +1187,14 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const config: Config = {};
           const result = config.value;
         `,
-        filename: 'useless-conversion-invalid3.ts',
         errors: [
           {
-            messageId: 'uselessNullishConversion',
+            messageId: 'unnecessaryNullToUndefinedConversion',
           },
         ],
       },
-      // Invalid: Function returning only null
       {
+        filename: 'function-returning-only-null.ts',
         code: `
           function getNullable(): string | null {
             return null;
@@ -1218,15 +1207,14 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           }
           const result = getNullable();
         `,
-        filename: 'useless-conversion-invalid4.ts',
         errors: [
           {
-            messageId: 'uselessNullishConversion',
+            messageId: 'unnecessaryUndefinedToNullConversion',
           },
         ],
       },
-      // Invalid: Nested expression with undefined
       {
+        filename: 'nested-expression-with-undefined.ts',
         code: `
           type MaybeString = string | undefined;
           const value: MaybeString = undefined;
@@ -1239,15 +1227,14 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const fallback: string = 'test';
           const result = (value) ?? fallback;
         `,
-        filename: 'useless-conversion-invalid5.ts',
         errors: [
           {
-            messageId: 'uselessNullishConversion',
+            messageId: 'unnecessaryNullToUndefinedConversion',
           },
         ],
       },
-      // Invalid: Complex type with only undefined
       {
+        filename: 'complex-type-with-only-undefined.ts',
         code: `
           type T = { x?: number };
           const obj: T = {};
@@ -1258,10 +1245,9 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const obj: T = {};
           const result = obj.x;
         `,
-        filename: 'useless-conversion-invalid6.ts',
         errors: [
           {
-            messageId: 'uselessNullishConversion',
+            messageId: 'unnecessaryNullToUndefinedConversion',
           },
         ],
       },
