@@ -1,7 +1,7 @@
 import { ESLintUtils, TSESLint, TSESTree } from '@typescript-eslint/utils';
 import * as ts from 'typescript';
 
-type MessageIds = 'unnecessaryOptionalChain' | 'unnecessaryNullishCoalesce' | 'requiresStrictNullChecks';
+type MessageIds = 'unnecessaryOptionalChain' | 'unnecessaryNullishCoalesce' | 'requiresStrictNullChecks' | 'uselessNullishConversion';
 
 type MessageData = {
   type: string;
@@ -19,6 +19,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     messages: {
       unnecessaryOptionalChain: 'Unnecessary `?.`: This value of type `{{type}}` will never be nullish.',
       unnecessaryNullishCoalesce: 'Unnecessary `??`: This value of type `{{type}}` will never be nullish.',
+      uselessNullishConversion: 'Conversion between null and undefined will never happen for this expression.',
       requiresStrictNullChecks: 'Checking for unnecessary `.?` and `??` requires `strictNullChecks` to be enabled in tsconfig, and requires full type information (using the typescript parser for eslint).',
     },
     schema: [],
@@ -64,6 +65,50 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
       // Check union types
       if (type.isUnion()) {
         return type.types.some(t => isNullish(t));
+      }
+
+      return false;
+    }
+
+    /**
+     * Check if a TypeScript type can be null
+     */
+    function canBeNull(type: ts.Type): boolean {
+      // any and unknown types can contain null, so treat them as potentially null
+      if (type.flags & ts.TypeFlags.Any || type.flags & ts.TypeFlags.Unknown) {
+        return true;
+      }
+
+      // Check if type includes null
+      if (type.flags & ts.TypeFlags.Null) {
+        return true;
+      }
+
+      // Check union types
+      if (type.isUnion()) {
+        return type.types.some(t => canBeNull(t));
+      }
+
+      return false;
+    }
+
+    /**
+     * Check if a TypeScript type can be undefined
+     */
+    function canBeUndefined(type: ts.Type): boolean {
+      // any and unknown types can contain undefined, so treat them as potentially undefined
+      if (type.flags & ts.TypeFlags.Any || type.flags & ts.TypeFlags.Unknown) {
+        return true;
+      }
+
+      // Check if type includes undefined
+      if (type.flags & ts.TypeFlags.Undefined) {
+        return true;
+      }
+
+      // Check union types
+      if (type.isUnion()) {
+        return type.types.some(t => canBeUndefined(t));
       }
 
       return false;
@@ -218,6 +263,55 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
 
       LogicalExpression(node: TSESTree.LogicalExpression) {
         if (node.operator === '??') {
+          // First, check for useless null/undefined conversions
+          const rightNode = node.right;
+          
+          // Check if right side is null or undefined literal
+          let isRightNull = false;
+          let isRightUndefined = false;
+          
+          if (rightNode.type === 'Identifier' && rightNode.name === 'undefined') {
+            isRightUndefined = true;
+          } else if (rightNode.type === 'Literal' && rightNode.value === null) {
+            isRightNull = true;
+          }
+          
+          // If right side is null or undefined, check if it's a useless conversion
+          if (isRightNull || isRightUndefined) {
+            const leftTsNode = services.esTreeNodeToTSNodeMap.get(node.left);
+            const leftType = checker.getTypeAtLocation(leftTsNode);
+            
+            const leftCanBeNull = canBeNull(leftType);
+            const leftCanBeUndefined = canBeUndefined(leftType);
+            
+            // Report if coalescing with undefined when left can only be undefined (not null)
+            // or coalescing with null when left can only be null (not undefined)
+            if (isRightUndefined && leftCanBeUndefined && !leftCanBeNull) {
+              context.report({
+                node,
+                messageId: 'uselessNullishConversion',
+                fix(fixer) {
+                  const leftText = context.sourceCode.getText(node.left);
+                  return fixer.replaceText(node, leftText);
+                },
+              });
+              return; // Don't check for other issues
+            }
+            
+            if (isRightNull && leftCanBeNull && !leftCanBeUndefined) {
+              context.report({
+                node,
+                messageId: 'uselessNullishConversion',
+                fix(fixer) {
+                  const leftText = context.sourceCode.getText(node.left);
+                  return fixer.replaceText(node, leftText);
+                },
+              });
+              return; // Don't check for other issues
+            }
+          }
+          
+          // Then check for unnecessary nullish coalesce (existing check)
           const check = checkUnnecessaryNullishHandling(node.left);
           
           if (check) {

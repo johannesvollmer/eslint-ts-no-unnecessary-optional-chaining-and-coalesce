@@ -1128,22 +1128,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         `,
         filename: 'useless-conversion-valid4.ts',
       },
-      // Valid: x is never nullish, so ?? undefined is meaningful (even though unnecessary coalesce will be caught separately)
-      {
-        code: `
-          const x: string = 'hello';
-          const result = x ?? undefined;
-        `,
-        filename: 'useless-conversion-valid5.ts',
-      },
-      // Valid: x is never nullish, so ?? null is meaningful (even though unnecessary coalesce will be caught separately)
-      {
-        code: `
-          const x: string = 'hello';
-          const result = x ?? null;
-        `,
-        filename: 'useless-conversion-valid6.ts',
-      },
+
       // Valid: coalescing with non-null/undefined value
       {
         code: `
