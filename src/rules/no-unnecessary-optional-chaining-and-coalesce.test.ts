@@ -1251,6 +1251,74 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
+      {
+        filename: 'multiple-unnecessary-coalescing-with-undefined.ts',
+        code: `
+          const x: string | undefined = undefined;
+          const result = (x ?? undefined) ?? undefined;
+        `,
+        output: [
+          `
+          const x: string | undefined = undefined;
+          const result = x ?? undefined;
+        `,
+          `
+          const x: string | undefined = undefined;
+          const result = x;
+        `,
+        ],
+        errors: [
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+        ],
+      },
+      {
+        filename: 'multiple-unnecessary-coalescing-with-null.ts',
+        code: `
+          const x: string | null = null;
+          const result = (x ?? null) ?? null;
+        `,
+        output: [
+          `
+          const x: string | null = null;
+          const result = x ?? null;
+        `,
+          `
+          const x: string | null = null;
+          const result = x;
+        `,
+        ],
+        errors: [
+          {
+            messageId: 'unnecessaryUndefinedToNullConversion',
+          },
+          {
+            messageId: 'unnecessaryUndefinedToNullConversion',
+          },
+        ],
+      },
+      {
+        filename: 'parenthesized-expression.ts',
+        code: `
+          const x: string | undefined = undefined;
+          const y = 10;
+          const result = (x ?? undefined) + y;
+        `,
+        output: `
+          const x: string | undefined = undefined;
+          const y = 10;
+          const result = (x) + y;
+        `,
+        errors: [
+          {
+            messageId: 'unnecessaryNullToUndefinedConversion',
+          },
+        ],
+      },
     ],
   });
 });

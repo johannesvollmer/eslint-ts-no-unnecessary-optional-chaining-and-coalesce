@@ -185,6 +185,17 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     }
 
     /**
+     * Unified fix generator for nullish coalescing
+     * Replaces the entire expression with just the left operand
+     */
+    function createNullishCoalesceFix(node: TSESTree.LogicalExpression) {
+      return (fixer: TSESLint.RuleFixer) => {
+        const leftText = context.sourceCode.getText(node.left);
+        return fixer.replaceText(node, leftText);
+      };
+    }
+
+    /**
      * Unified method to report unnecessary optional chaining
      */
     function reportUnnecessaryOptionalChain(node: TSESTree.Node, typeString: string) {
@@ -270,10 +281,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
                 node,
                 messageId: 'unnecessaryNullToUndefinedConversion',
                 data: { type: leftTypeString } satisfies MessageData,
-                fix(fixer) {
-                  const leftText = context.sourceCode.getText(node.left);
-                  return fixer.replaceText(node, leftText);
-                },
+                fix: createNullishCoalesceFix(node),
               });
               return; // Don't check for other issues
             }
@@ -284,10 +292,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
                 node,
                 messageId: 'unnecessaryUndefinedToNullConversion',
                 data: { type: leftTypeString } satisfies MessageData,
-                fix(fixer) {
-                  const leftText = context.sourceCode.getText(node.left);
-                  return fixer.replaceText(node, leftText);
-                },
+                fix: createNullishCoalesceFix(node),
               });
               return; // Don't check for other issues
             }
@@ -301,10 +306,7 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
               node,
               messageId: 'unnecessaryNullishCoalesce',
               data: { type: check.typeString } satisfies MessageData,
-              fix(fixer) {
-                const leftText = context.sourceCode.getText(node.left);
-                return fixer.replaceText(node, leftText);
-              },
+              fix: createNullishCoalesceFix(node),
             });
           }
         }
