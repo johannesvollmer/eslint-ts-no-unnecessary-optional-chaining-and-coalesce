@@ -19,8 +19,8 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
     messages: {
       unnecessaryOptionalChain: 'Unnecessary `?.`: This value of type `{{type}}` will never be nullish.',
       unnecessaryNullishCoalesce: 'Unnecessary `??`: This value of type `{{type}}` will never be nullish.',
-      unnecessaryNullToUndefinedConversion: 'This value of type `{{type}}` is never null, so this conversion from null to undefined is unnecessary.',
-      unnecessaryUndefinedToNullConversion: 'This value of type `{{type}}` is never undefined, so this conversion from undefined to null is unnecessary.',
+      unnecessaryNullToUndefinedConversion: 'Unnecessary `??`: This value of type `{{type}}` can only be undefined (not null), so coalescing with `undefined` is redundant.',
+      unnecessaryUndefinedToNullConversion: 'Unnecessary `??`: This value of type `{{type}}` can only be null (not undefined), so coalescing with `null` is redundant.',
       requiresStrictNullChecks: 'Checking for unnecessary `.?` and `??` requires `strictNullChecks` to be enabled in tsconfig, and requires full type information (using the typescript parser for eslint).',
     },
     schema: [],
