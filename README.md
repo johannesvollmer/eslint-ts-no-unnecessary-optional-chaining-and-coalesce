@@ -128,11 +128,11 @@ const result = config.setting ?? undefined;
 // ✅ Good
 const result = config.setting;
 
-// ✅ Good - value can be both null and undefined
+// ✅ Good - value can be both null and undefined, coalescing removes both
 const value: string | null | undefined = getValue();
 const result = value ?? undefined;
 
-// ✅ Good - value can only be null, coalescing with undefined converts it
+// ✅ Good - value can only be null, coalescing converts null to undefined
 const value: string | null = getValue();
 const result = value ?? undefined;
 ```
@@ -156,11 +156,11 @@ const result = getNullable() ?? null;
 // ✅ Good
 const result = getNullable();
 
-// ✅ Good - value can be both null and undefined
+// ✅ Good - value can be both null and undefined, coalescing removes both
 const value: string | null | undefined = getValue();
 const result = value ?? null;
 
-// ✅ Good - value can only be undefined, coalescing with null converts it
+// ✅ Good - value can only be undefined, coalescing converts undefined to null
 const value: string | undefined = getValue();
 const result = value ?? null;
 ```
