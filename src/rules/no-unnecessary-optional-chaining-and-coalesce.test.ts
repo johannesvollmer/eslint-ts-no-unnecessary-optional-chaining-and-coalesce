@@ -22,13 +22,12 @@ const ruleTester = new RuleTester({
 describe('no-unnecessary-optional-chaining-and-coalesce', () => {
   ruleTester.run('no-unnecessary-optional-chaining-and-coalesce', rule, {
     valid: [
-      // Valid: Optional chaining with nullable types
       {
         code: `
           const obj: { prop: string } | null = null;
           const value = obj?.prop;
         `,
-        filename: 'valid1.ts',
+        filename: 'valid-optional-chaining-with-nullable-types.ts',
       },
       {
         code: `
@@ -44,13 +43,12 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         `,
         filename: 'valid3.ts',
       },
-      // Valid: Nullish coalescing with nullable types
       {
         code: `
           const str: string | null = null;
           const result = str ?? 'fallback';
         `,
-        filename: 'valid4.ts',
+        filename: 'valid-nullish-coalescing-with-nullable-types.ts',
       },
       {
         code: `
@@ -66,37 +64,33 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         `,
         filename: 'valid6.ts',
       },
-      // Valid: Optional chaining with any type
       {
         code: `
           const anyValue: any = getValue();
           const result = anyValue?.prop;
         `,
-        filename: 'valid7.ts',
+        filename: 'valid-optional-chaining-with-any-type.ts',
       },
-      // Valid: Nullish coalescing with any type
       {
         code: `
           const anyValue: any = getValue();
           const result = anyValue ?? 'fallback';
         `,
-        filename: 'valid8.ts',
+        filename: 'valid-nullish-coalescing-with-any-type.ts',
       },
-      // Valid: Optional chaining with unknown type
       {
         code: `
           const unknownValue: unknown = getValue();
           const result = unknownValue ?? 'fallback';
         `,
-        filename: 'valid9.ts',
+        filename: 'valid-optional-chaining-with-unknown-type.ts',
       },
-      // Valid: Optional call with nullable function
       {
         code: `
           const fn: (() => string) | null = null;
           const result = fn?.();
         `,
-        filename: 'valid10.ts',
+        filename: 'valid-optional-call-with-nullable-function.ts',
       },
       {
         code: `
@@ -105,16 +99,14 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         `,
         filename: 'valid11.ts',
       },
-      // Valid: Union types that include null/undefined
       {
         code: `
           type MaybeString = string | null;
           declare const value: MaybeString;
           const result = value ?? 'default';
         `,
-        filename: 'valid12.ts',
+        filename: 'valid-union-types-that-include-nullundefined.ts',
       },
-      // Valid: Function returning nullable type
       {
         code: `
           function getNullable(): string | null {
@@ -122,7 +114,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           }
           const result = getNullable() ?? 'fallback';
         `,
-        filename: 'valid13.ts',
+        filename: 'valid-function-returning-nullable-type.ts',
       },
       {
         code: `
@@ -164,7 +156,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
       },
     ],
     invalid: [
-      // Invalid: Optional chaining on non-nullable object
       {
         code: `
           const obj: { prop: string } = { prop: 'test' };
@@ -174,14 +165,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const obj: { prop: string } = { prop: 'test' };
           const value = obj.prop;
         `,
-        filename: 'invalid1.ts',
+        filename: 'invalid-optional-chaining-on-non-nullable-object.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Nullish coalescing on non-nullable string
       {
         code: `
           const str: string = 'hello';
@@ -191,7 +181,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const str: string = 'hello';
           const result = str;
         `,
-        filename: 'invalid2.ts',
+        filename: 'invalid-nullish-coalescing-on-non-nullable-string.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
@@ -199,7 +189,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         ],
       },
 
-      // the array member is always present, so the chaining array access is unnecessary:
       {
         code: `
           const poi: { categories: ({id?:string,sourceCategory?:string}|null)[] } = {} as any;
@@ -209,7 +198,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const poi: { categories: ({id?:string,sourceCategory?:string}|null)[] } = {} as any;
           const categoryId = poi.categories[0]?.id ?? poi.categories[0]?.sourceCategory ?? '';
         `,
-        filename: 'invalid_deep_array1.ts',
+        filename: 'the-array-member-is-always-present-so-the-chaining-array-access-is-unnecessary.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
@@ -269,7 +258,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         ],
       },
 
-      // Invalid: Optional chaining on guaranteed object
       {
         code: `
           interface MyInterface {
@@ -285,14 +273,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const obj: MyInterface = { prop: 'value' };
           const result = obj.prop;
         `,
-        filename: 'invalid3.ts',
+        filename: 'invalid-optional-chaining-on-guaranteed-object.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Nullish coalescing on guaranteed number
       {
         code: `
           const num: number = 42;
@@ -302,14 +289,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const num: number = 42;
           const result = num;
         `,
-        filename: 'invalid4.ts',
+        filename: 'invalid-nullish-coalescing-on-guaranteed-number.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
           },
         ],
       },
-      // Invalid: Optional call on guaranteed function
       {
         code: `
           function getObj(): { prop: string } {
@@ -323,14 +309,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           }
           const value = getObj().prop;
         `,
-        filename: 'invalid5.ts',
+        filename: 'invalid-optional-call-on-guaranteed-function.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Multiple unnecessary optional chains (autofix applied iteratively in multiple passes)
       {
         code: `
           const obj: { nested: { value: string } } = { nested: { value: 'test' } };
@@ -346,14 +331,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const result = obj.nested.value;
         `,
         ],
-        filename: 'invalid6.ts',
+        filename: 'invalid-multiple-unnecessary-optional-chains-autofix-applied-iteratively-in-multiple-passes.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Nullish coalescing on guaranteed boolean
       {
         code: `
           const bool: boolean = true;
@@ -363,14 +347,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const bool: boolean = true;
           const result = bool;
         `,
-        filename: 'invalid7.ts',
+        filename: 'invalid-nullish-coalescing-on-guaranteed-boolean.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
           },
         ],
       },
-      // Invalid: Optional chaining on literal object
       {
         code: `
           const value = { x: 1, y: 2 }?.x;
@@ -378,14 +361,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         output: `
           const value = { x: 1, y: 2 }.x;
         `,
-        filename: 'invalid8.ts',
+        filename: 'invalid-optional-chaining-on-literal-object.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Nullish coalescing on literal string
       {
         code: `
           const result = 'literal' ?? 'fallback';
@@ -393,14 +375,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
         output: `
           const result = 'literal';
         `,
-        filename: 'invalid9.ts',
+        filename: 'invalid-nullish-coalescing-on-literal-string.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
           },
         ],
       },
-      // Invalid: Optional call on guaranteed function reference
       {
         code: `
           const fn: () => number = () => 42;
@@ -410,14 +391,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const fn: () => number = () => 42;
           const result = fn();
         `,
-        filename: 'invalid10.ts',
+        filename: 'invalid-optional-call-on-guaranteed-function-reference.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Nested optional chaining - all unnecessary (autofix applied iteratively in multiple passes)
       {
         code: `
           const obj: { a: { b: { c: string } } } = { a: { b: { c: 'value' } } };
@@ -437,14 +417,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const result = obj.a.b.c;
         `,
         ],
-        filename: 'invalid11.ts',
+        filename: 'invalid-nested-optional-chaining-all-unnecessary-autofix-applied-iteratively-in-multiple-passes.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Deeply nested optional chaining (autofix applied iteratively in multiple passes)
       {
         code: `
           const obj: { x: { y: { z: number } } } = { x: { y: { z: 42 } } };
@@ -464,14 +443,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const value = obj.x.y.z;
         `,
         ],
-        filename: 'invalid12.ts',
+        filename: 'invalid-deeply-nested-optional-chaining-autofix-applied-iteratively-in-multiple-passes.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Chained with function call (autofix applied iteratively in multiple passes)
       {
         code: `
           function getObj(): { prop: { nested: string } } {
@@ -493,14 +471,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const value = getObj().prop.nested;
         `,
         ],
-        filename: 'invalid13.ts',
+        filename: 'invalid-chained-with-function-call-autofix-applied-iteratively-in-multiple-passes.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Chained optional chaining with array access (fixes one at a time, outermost first like other chains)
       {
         code: `
           const arr: { items: string[] } = { items: ['a', 'b'] };
@@ -516,14 +493,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const item = arr.items[0];
         `,
         ],
-        filename: 'invalid14.ts',
+        filename: 'invalid-chained-optional-chaining-with-array-access-fixes-one-at-a-time-outermost-first-like-other-chains.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Multiple nullish coalescing - only outer gets fixed first
       {
         code: `
           const str: string = 'hello';
@@ -539,7 +515,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const result = str;
         `,
         ],
-        filename: 'invalid15.ts',
+        filename: 'invalid-multiple-nullish-coalescing-only-outer-gets-fixed-first.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
@@ -549,7 +525,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Nullish coalescing with object property
       {
         code: `
           const obj: { value: number } = { value: 10 };
@@ -559,14 +534,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const obj: { value: number } = { value: 10 };
           const result = obj.value;
         `,
-        filename: 'invalid16.ts',
+        filename: 'invalid-nullish-coalescing-with-object-property.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
           },
         ],
       },
-      // Invalid: Mixed - optional chaining followed by nullish coalescing (both get fixed separately)
       {
         code: `
           const obj: { prop: string } = { prop: 'test' };
@@ -582,7 +556,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const result = obj.prop;
         `,
         ],
-        filename: 'invalid17.ts',
+        filename: 'invalid-mixed-optional-chaining-followed-by-nullish-coalescing-both-get-fixed-separately.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
@@ -592,7 +566,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Complex chained expression (autofix applied iteratively in multiple passes)
       {
         code: `
           interface Config {
@@ -640,7 +613,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const val = config.settings.options.value;
         `,
         ],
-        filename: 'invalid19.ts',
+        filename: 'invalid-complex-chained-expression-autofix-applied-iteratively-in-multiple-passes.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
@@ -728,7 +701,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
   // Test exotic type scenarios
   ruleTester.run('exotic type scenarios', rule, {
     valid: [
-      // Valid: Intersection type with nullable component
       {
         code: `
           type A = { a: string };
@@ -737,45 +709,40 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const obj: C | null = null;
           const value = obj?.a;
         `,
-        filename: 'exotic-valid1.ts',
+        filename: 'valid-intersection-type-with-nullable-component.ts',
       },
-      // Valid: Conditional type that can be nullish
       {
         code: `
           type Maybe<T> = T extends string ? T | null : T;
           const val: Maybe<string> = null;
           const result = val ?? 'default';
         `,
-        filename: 'exotic-valid2.ts',
+        filename: 'valid-conditional-type-that-can-be-nullish.ts',
       },
-      // Valid: Deeply nested nullable type
       {
         code: `
           type Deep = { l1: { l2: { l3: { l4: { l5: string } } } } } | null;
           const obj: Deep = null;
           const result = obj?.l1?.l2?.l3?.l4?.l5;
         `,
-        filename: 'exotic-valid3.ts',
+        filename: 'valid-deeply-nested-nullable-type.ts',
       },
-      // Valid: Logical OR with nullable
       {
         code: `
           const str: string | null = null;
           const result = str?.length || 0;
         `,
-        filename: 'exotic-valid4.ts',
+        filename: 'valid-logical-or-with-nullable.ts',
       },
-      // Valid: Logical AND with nullable
       {
         code: `
           const obj: { prop: string } | null = null;
           const result = obj && obj.prop;
         `,
-        filename: 'exotic-valid5.ts',
+        filename: 'valid-logical-and-with-nullable.ts',
       },
     ],
     invalid: [
-      // Invalid: Intersection type - both components non-nullable
       {
         code: `
           type A = { a: string };
@@ -791,14 +758,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const obj: C = { a: 'test', b: 42 };
           const value = obj.a;
         `,
-        filename: 'exotic-invalid1.ts',
+        filename: 'invalid-intersection-type-both-components-non-nullable.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Conditional type that resolves to non-nullable
       {
         code: `
           type NonNull<T> = T extends null ? never : T;
@@ -810,14 +776,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const val: NonNull<string> = 'test';
           const result = val;
         `,
-        filename: 'exotic-invalid2.ts',
+        filename: 'invalid-conditional-type-that-resolves-to-non-nullable.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
           },
         ],
       },
-      // Invalid: Very deep nesting - all non-nullable (autofix applied iteratively)
       {
         code: `
           type Deep = { l1: { l2: { l3: { l4: { l5: { l6: string } } } } } };
@@ -856,14 +821,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const result = obj.l1.l2.l3.l4.l5.l6;
         `,
         ],
-        filename: 'exotic-invalid3.ts',
+        filename: 'invalid-very-deep-nesting-all-non-nullable-autofix-applied-iteratively.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Deeply nested operators - mix of ?. and ??
       {
         code: `
           const obj: { a: { b: { c: number } } } = { a: { b: { c: 5 } } };
@@ -891,7 +855,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const result = obj.a.b.c;
         `,
         ],
-        filename: 'exotic-invalid4.ts',
+        filename: 'invalid-deeply-nested-operators-mix-of-and.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
@@ -904,7 +868,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Logical OR with non-nullable (|| is not checked by this rule, but ?. is)
       {
         code: `
           const str: string = 'hello';
@@ -914,14 +877,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const str: string = 'hello';
           const result = str.length || 0;
         `,
-        filename: 'exotic-invalid5.ts',
+        filename: 'invalid-logical-or-with-non-nullable-is-not-checked-by-this-rule-but-is.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Logical AND with non-nullable
       {
         code: `
           const obj: { prop: string } = { prop: 'test' };
@@ -931,14 +893,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const obj: { prop: string } = { prop: 'test' };
           const result = obj && obj.prop;
         `,
-        filename: 'exotic-invalid6.ts',
+        filename: 'invalid-logical-and-with-non-nullable.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Plus operation with nullish coalescing
       {
         code: `
           const a: number = 5;
@@ -950,7 +911,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const b: number = 10;
           const result = (a) + (b);
         `,
-        filename: 'exotic-invalid7.ts',
+        filename: 'invalid-plus-operation-with-nullish-coalescing.ts',
         errors: [
           {
             messageId: 'unnecessaryNullishCoalesce',
@@ -960,7 +921,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Complex expression with string concatenation and multiple operators
       {
         code: `
           const obj: { val: number } = { val: 42 };
@@ -972,7 +932,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const fallback: string = 'default';
           const result = (obj.val + ' - ') + (fallback);
         `,
-        filename: 'exotic-invalid8.ts',
+        filename: 'invalid-complex-expression-with-string-concatenation-and-multiple-operators.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
@@ -982,7 +942,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Intersection type with array access
       {
         code: `
           type HasArray = { items: string[] };
@@ -1007,14 +966,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const first = obj.items[0];
         `,
         ],
-        filename: 'exotic-invalid9.ts',
+        filename: 'invalid-intersection-type-with-array-access.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Conditional type in chain
       {
         code: `
           type ExtractValue<T> = T extends { value: infer V } ? V : never;
@@ -1028,14 +986,13 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const obj: ExtractValue<MyType> = { nested: 'test' };
           const result = obj.nested;
         `,
-        filename: 'exotic-invalid10.ts',
+        filename: 'invalid-conditional-type-in-chain.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
           },
         ],
       },
-      // Invalid: Deep nesting with logical OR
       {
         code: `
           const obj: { a: { b: number } } = { a: { b: 10 } };
@@ -1054,7 +1011,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const result = (obj.a.b * (multiplier)) || 0;
         `,
         ],
-        filename: 'exotic-invalid11.ts',
+        filename: 'invalid-deep-nesting-with-logical-or.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
@@ -1064,7 +1021,6 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           },
         ],
       },
-      // Invalid: Chain with function calls and arithmetic
       {
         code: `
           function getNum(): number { return 5; }
@@ -1083,7 +1039,7 @@ describe('no-unnecessary-optional-chaining-and-coalesce', () => {
           const result = obj.multiply(getNum()) + 10;
         `,
         ],
-        filename: 'exotic-invalid12.ts',
+        filename: 'invalid-chain-with-function-calls-and-arithmetic.ts',
         errors: [
           {
             messageId: 'unnecessaryOptionalChain',
