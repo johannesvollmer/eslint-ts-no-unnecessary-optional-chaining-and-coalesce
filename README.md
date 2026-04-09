@@ -2,11 +2,16 @@
 
 ESLint rule that flags `.?` and `??` usages where values will never be nullish according to TypeScript type inference.
 
+> [!CAUTION]
+> The NPM package has been renamed to `eslint-ts-no-unnecessary-fallbacks` for a shorter name! 
+> This is the old package and it will not be maintained any longer.
+
+
 ## Installation
 
-Via [npm package](https://www.npmjs.com/package/eslint-ts-no-unnecessary-optional-chaining-and-coalesce).
+Via [npm package](https://www.npmjs.com/package/eslint-ts-no-unnecessary-fallbacks).
 ```bash
-npm install --save-dev eslint-ts-no-unnecessary-optional-chaining-and-coalesce
+npm install --save-dev eslint-ts-no-unnecessary-fallbacks
 ```
 
 ## Requirements
@@ -23,7 +28,7 @@ Add the plugin to your ESLint configuration file (e.g., `eslint.config.js` for f
 
 ```javascript
 import eslintParser from '@typescript-eslint/parser';
-import plugin from 'eslint-ts-no-unnecessary-optional-chaining-and-coalesce';
+import plugin from 'eslint-ts-no-unnecessary-fallbacks';
 
 export default [
   {
@@ -38,7 +43,7 @@ export default [
       'ts-no-unnecessary': plugin,
     },
     rules: {
-      'ts-no-unnecessary/no-unnecessary-optional-chaining-and-coalesce': 'error',
+      'ts-no-unnecessary/no-unnecessary-fallbacks': 'error',
     },
   },
 ];
