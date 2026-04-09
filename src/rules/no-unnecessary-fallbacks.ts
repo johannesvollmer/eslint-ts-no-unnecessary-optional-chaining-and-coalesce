@@ -7,10 +7,10 @@ type MessageData = {
   type: string;
 };
 
-export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
-  (name) => `https://github.com/johannesvollmer/eslint-ts-no-unnecessary-optional-chaining-and-coalesce#${name}`
+export const noUnnecessaryFallbacks = ESLintUtils.RuleCreator(
+  (name) => `https://github.com/johannesvollmer/eslint-ts-no-unnecessary-fallbacks#${name}`
 )<[], MessageIds>({
-  name: 'no-unnecessary-optional-chaining-and-coalesce',
+  name: 'no-unnecessary-fallbacks',
   meta: {
     type: 'suggestion',
     docs: {
@@ -315,4 +315,4 @@ export const noUnnecessaryOptionalChainingAndCoalesce = ESLintUtils.RuleCreator(
   },
 });
 
-export default noUnnecessaryOptionalChainingAndCoalesce;
+export default noUnnecessaryFallbacks;
