@@ -11,9 +11,11 @@ npm install --save-dev eslint-ts-no-unnecessary-fallbacks
 
 ## Requirements
 
-- ESLint 9.x
+- ESLint 9.x or 10.x
 - TypeScript 5.x
 - @typescript-eslint/parser 8.x
+- Node.js 20.19.0 or higher
+- npm 10.0.0 or higher
 
 ## Usage
 
@@ -42,20 +44,7 @@ export default [
 ];
 ```
 
-For legacy `.eslintrc` format:
-
-```json
-{
-  "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "project": "./tsconfig.json"
-  },
-  "plugins": ["eslint-ts-no-unnecessary-fallbacks"],
-  "rules": {
-    "eslint-ts-no-unnecessary-fallbacks/no-unnecessary-fallbacks": "error"
-  }
-}
-```
+**Note:** ESLint 10 and later only support flat config format (`eslint.config.js`). Legacy `.eslintrc` configuration is no longer supported.
 
 ## What it detects
 
