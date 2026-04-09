@@ -1,4 +1,4 @@
-# eslint-ts-no-unnecessary-optional-chaining-and-coalesce
+# eslint-ts-no-unnecessary-fallbacks
 
 ESLint rule that flags `.?` and `??` usages where values will never be nullish according to TypeScript type inference.
 

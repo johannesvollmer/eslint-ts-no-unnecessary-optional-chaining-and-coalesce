@@ -1,5 +1,5 @@
 {
-  "name": "eslint-ts-no-unnecessary-optional-chaining-and-coalesce",
+  "name": "eslint-ts-no-unnecessary-fallbacks",
   "version": "8.0.0",
   "description": "ESLint rule that flags `.?` and `??` usages where values will never be nullish",
   "main": "dist/index.js",
@@ -32,12 +32,12 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/johannesvollmer/eslint-ts-no-unnecessary-optional-chaining-and-coalesce.git"
+    "url": "git+https://github.com/johannesvollmer/eslint-ts-no-unnecessary-fallbacks.git"
   },
   "bugs": {
-    "url": "https://github.com/johannesvollmer/eslint-ts-no-unnecessary-optional-chaining-and-coalesce/issues"
+    "url": "https://github.com/johannesvollmer/eslint-ts-no-unnecessary-fallbacks/issues"
   },
-  "homepage": "https://github.com/johannesvollmer/eslint-ts-no-unnecessary-optional-chaining-and-coalesce#readme",
+  "homepage": "https://github.com/johannesvollmer/eslint-ts-no-unnecessary-fallbacks#readme",
   "files": [
     "dist",
     "README.md",

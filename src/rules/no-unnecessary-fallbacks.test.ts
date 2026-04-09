@@ -1,7 +1,7 @@
 import path from 'path';
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import parser from '@typescript-eslint/parser';
-import rule from '../rules/no-unnecessary-optional-chaining-and-coalesce';
+import rule from '../rules/no-unnecessary-fallbacks';
 
 // Configure RuleTester afterAll for Jest compatibility
 RuleTester.afterAll = afterAll;
@@ -19,8 +19,8 @@ const ruleTester = new RuleTester({
   },
 } as any);
 
-describe('no-unnecessary-optional-chaining-and-coalesce', () => {
-  ruleTester.run('no-unnecessary-optional-chaining-and-coalesce', rule, {
+describe('no-unnecessary-fallbacks', () => {
+  ruleTester.run('no-unnecessary-fallbacks', rule, {
     valid: [
       {
         filename: 'valid-optional-chaining-with-nullable-types.ts',

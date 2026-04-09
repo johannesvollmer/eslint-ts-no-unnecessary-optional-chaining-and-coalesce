@@ -1,7 +1,7 @@
-import noUnnecessaryOptionalChainingAndCoalesce from './rules/no-unnecessary-optional-chaining-and-coalesce';
+import noUnnecessaryFallbacks from './rules/no-unnecessary-fallbacks';
 
 export const rules = {
-  'no-unnecessary-optional-chaining-and-coalesce': noUnnecessaryOptionalChainingAndCoalesce,
+  'no-unnecessary-fallbacks': noUnnecessaryFallbacks,
 };
 
 export default {
